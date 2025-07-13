@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy the package directory
-COPY packages/vector_recsys_lite/ ./vector_recsys_lite/
+COPY . ./vector_recsys_lite/
 
 # Install dependencies
 RUN pip install numpy scipy pandas pyarrow h5py sqlalchemy typer rich

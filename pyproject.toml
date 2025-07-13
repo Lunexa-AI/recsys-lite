@@ -4,7 +4,7 @@ version = "0.1.4"
 description = "🔥 Zero-dep NumPy SVD recommender + ANN benchmark (2 s on 100 k MovieLens)"
 authors = ["Simbarashe Timire <stimire92@gmail.com>"]
 license = "MIT"
-readme = "../../docs/README.md"
+readme = "README.md"
 packages = [{include = "vector_recsys_lite", from = "src"}]
 keywords = ["recommender-system", "svd", "numpy", "machine-learning", "collaborative-filtering"]
 classifiers = [
