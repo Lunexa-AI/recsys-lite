@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "vector-recsys-lite"
-version = "0.1.0"
+name = "vector_recsys_lite"
+version = "0.1.4"
 description = "Vector recommender system plugin (stub)"
 authors = ["Simbarashe Timire <stimire92@gmail.com>"]
 license = "MIT"
