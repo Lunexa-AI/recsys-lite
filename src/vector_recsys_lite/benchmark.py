@@ -18,6 +18,7 @@ from scipy import sparse
 
 from .algo import benchmark_algorithm, compute_mae, compute_rmse, svd_reconstruct
 from .io import create_sample_ratings, load_ratings, save_ratings
+from lunexa_core.utils import as_dense
 
 console = Console()
 
@@ -276,15 +277,8 @@ class BenchmarkSuite:
                     tracemalloc.stop()
 
                     # Compute accuracy
-                    if sparse.issparse(ratings):
-                        actual = ratings.toarray()
-                    else:
-                        actual = ratings
-
-                    if sparse.issparse(reconstructed):
-                        predictions = reconstructed.toarray()
-                    else:
-                        predictions = reconstructed
+                    actual = as_dense(ratings)
+                    predictions = as_dense(reconstructed)
 
                     rmse = compute_rmse(predictions, actual)
                     mae = compute_mae(predictions, actual)
@@ -336,13 +330,17 @@ class BenchmarkSuite:
             table.add_row("Unknown results format")
             return table
 
-    def _get_matrix_info(self, ratings: np.ndarray | sparse.spmatrix) -> dict[str, Any]:
+    def _get_matrix_info(
+        self, ratings: np.ndarray | sparse.csr_matrix
+    ) -> dict[str, Any]:
         """Extract information about the rating matrix."""
         shape = ratings.shape
         if sparse.issparse(ratings):
-            nnz = ratings.nnz
+            # Type assertion to help mypy understand this is a sparse matrix
+            sparse_ratings = ratings  # type: sparse.csr_matrix
+            nnz = sparse_ratings.nnz
             sparsity = 1 - (nnz / (shape[0] * shape[1]))
-            memory_mb = ratings.data.nbytes / 1024 / 1024
+            memory_mb = sparse_ratings.data.nbytes / 1024 / 1024
         else:
             nnz = np.count_nonzero(ratings)
             sparsity = 1 - (nnz / ratings.size)

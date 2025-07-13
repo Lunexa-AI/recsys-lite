@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from scipy import sparse
 from vector_recsys_lite.algo import compute_mae, compute_rmse, svd_reconstruct, top_n
+from lunexa_core.utils import as_dense
 
 
 class TestSVDReconstruct:
@@ -19,7 +20,7 @@ class TestSVDReconstruct:
 
         # Convert to dense if sparse
         if sparse.issparse(reconstructed):
-            reconstructed = reconstructed.toarray()
+            reconstructed = as_dense(reconstructed)
 
         assert reconstructed.shape == mat.shape
         assert reconstructed.dtype == np.float32
@@ -35,7 +36,7 @@ class TestSVDReconstruct:
 
         # Convert to dense if sparse
         if sparse.issparse(reconstructed):
-            reconstructed = reconstructed.toarray()
+            reconstructed = as_dense(reconstructed)
 
         assert reconstructed.shape == mat.shape
         assert reconstructed.dtype == np.float32
@@ -77,7 +78,7 @@ class TestSVDReconstruct:
 
         # Convert to dense if sparse
         if sparse.issparse(reconstructed):
-            reconstructed = reconstructed.toarray()
+            reconstructed = as_dense(reconstructed)
 
         # Should be very close to original (allow for float32 precision)
         diff = np.abs(original - reconstructed)
@@ -161,7 +162,7 @@ class TestTopN:
         empty_est = np.zeros((0, 3), dtype=np.float32)
 
         recs = top_n(empty_est, empty_mat, n=2)
-        assert recs == []
+        assert len(recs) == 0
 
     def test_large_n(self) -> None:
         """Test with large n value."""
@@ -189,8 +190,8 @@ class TestTopN:
         recs = top_n(est, mat, n=3)
 
         # Should be sorted by estimated rating (descending)
-        expected_order = [2, 3, 1]  # Items with est ratings 3.0, 2.0, 1.0
-        assert recs[0] == expected_order
+        expected_order = np.array([2, 3, 1])  # Items with est ratings 3.0, 2.0, 1.0
+        np.testing.assert_array_equal(recs[0], expected_order)
 
     def test_sparse_matrix_support(self) -> None:
         """Test sparse matrix support."""
@@ -560,7 +561,7 @@ class TestIntegration:
 
         # Convert to dense if sparse
         if sparse.issparse(reconstructed):
-            reconstructed = reconstructed.toarray()
+            reconstructed = as_dense(reconstructed)
 
         # Generate recommendations
         recommendations = top_n(reconstructed, ratings, n=2)

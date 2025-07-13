@@ -4,23 +4,28 @@ FROM python:3.11-slim
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV HOME=/app
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Set work directory
 WORKDIR /app
 
-# Copy the package directory
-COPY . ./vector_recsys_lite/
+# Copy the entire monorepo
+COPY . .
 
-# Install dependencies
-RUN pip install numpy scipy pandas pyarrow h5py sqlalchemy typer rich
+# Create .cache dir for poetry and set permissions
+RUN mkdir -p /app/.cache/pypoetry
 
-# Install the package
-RUN cd vector_recsys_lite && pip install -e . --no-deps
+# Install poetry and dependencies
+RUN pip install --upgrade pip setuptools poetry && \
+    poetry config virtualenvs.create false && \
+    poetry config cache-dir /app/.cache/pypoetry && \
+    poetry install --with dev
 
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
@@ -32,7 +37,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import vector_recsys_lite; print('OK')" || exit 1
 
 # Default command
-ENTRYPOINT ["vector-recsys"]
+ENTRYPOINT ["env", "PYTHONPATH=/app/packages/vector_recsys_lite/src:/app/packages/lunexa_core/src", "poetry", "run", "vector-recsys"]
 CMD ["--help"]
 
 # Labels

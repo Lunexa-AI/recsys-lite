@@ -11,6 +11,8 @@ from vector_recsys_lite.benchmark import (
     create_benchmark_dataset,
     quick_benchmark,
 )
+from unittest import mock
+from typing import Any
 
 
 class TestBenchmarkSuite:
@@ -272,3 +274,176 @@ class TestBenchmarkIntegration:
         assert results["time"] > 0
         assert results["rmse"] >= 0
         assert results["mae"] >= 0
+
+
+def test_run_algorithm_benchmark_invalid_algorithm() -> None:
+    suite = BenchmarkSuite()
+    matrix = np.random.rand(5, 5).astype(np.float32)
+    results = suite.run_algorithm_benchmark(
+        ratings=matrix,
+        algorithms=["invalid"],
+        k_values=[2],
+        n_runs=1,
+        save_results=False,
+    )
+    assert any(
+        "error" in c and "Unknown algorithm" in c["error"]
+        for c in results["configurations"]
+    )
+
+
+def test_run_dataset_benchmark_missing_file() -> None:
+    suite = BenchmarkSuite()
+    results = suite.run_dataset_benchmark(
+        data_paths=["nonexistent.csv"], algorithms=["svd"], k=2, n_runs=1
+    )
+    assert isinstance(results, dict)
+    assert "datasets" in results
+    assert any("error" in d["info"] for d in results["datasets"])
+
+
+def test_generate_report_with_empty_results() -> None:
+    suite = BenchmarkSuite()
+    results: dict[str, Any] = {}
+    table = suite.generate_report(results)
+    assert hasattr(table, "add_row")
+    # Check that the table has a column named 'Error'
+    assert any(col.header == "Error" for col in table.columns)
+
+
+def test_run_memory_profiling_import_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    suite = BenchmarkSuite()
+    matrix = np.random.rand(5, 5).astype(np.float32)
+    monkeypatch.setitem(__import__("sys").modules, "psutil", None)
+    monkeypatch.setitem(__import__("sys").modules, "tracemalloc", None)
+    results = suite.run_memory_profiling(ratings=matrix, k=2, n_runs=1)
+    assert results == {}
+
+
+def test_generate_summary_no_success() -> None:
+    suite = BenchmarkSuite()
+    summary = suite._generate_summary([{"algorithm": "svd", "k": 2, "error": "fail"}])
+    assert "error" in summary
+
+
+def test_generate_summary_best_selection() -> None:
+    suite = BenchmarkSuite()
+    configs = [
+        {"algorithm": "svd", "k": 2, "avg_time": 1.0, "avg_rmse": 0.5, "avg_mae": 0.4},
+        {"algorithm": "svd", "k": 3, "avg_time": 0.5, "avg_rmse": 0.6, "avg_mae": 0.3},
+    ]
+    summary = suite._generate_summary(configs)
+    assert summary["best_time"]["k"] == 3
+    assert summary["best_rmse"]["k"] == 2
+    assert summary["best_mae"]["k"] == 3
+
+
+def test_generate_cross_dataset_summary_no_success() -> None:
+    suite = BenchmarkSuite()
+    results = {"datasets": [{"info": {"error": "fail"}, "results": []}]}
+    summary = suite._generate_cross_dataset_summary(results)
+    assert "error" in summary
+
+
+def test_generate_cross_dataset_summary_aggregate() -> None:
+    suite = BenchmarkSuite()
+    results = {
+        "datasets": [
+            {
+                "info": {},
+                "results": [
+                    {
+                        "algorithm": "svd",
+                        "avg_time": 1.0,
+                        "avg_rmse": 0.5,
+                        "avg_mae": 0.4,
+                    },
+                    {
+                        "algorithm": "svd",
+                        "avg_time": 2.0,
+                        "avg_rmse": 0.7,
+                        "avg_mae": 0.6,
+                    },
+                ],
+            }
+        ]
+    }
+    summary = suite._generate_cross_dataset_summary(results)
+    assert "svd" in summary
+    assert abs(summary["svd"]["avg_time"] - 1.5) < 1e-6
+
+
+def test_save_results_file_error(tmp_path: Path) -> None:
+    suite = BenchmarkSuite(output_dir=tmp_path)
+    # Patch open to raise
+    with mock.patch("builtins.open", side_effect=IOError), pytest.raises(IOError):
+        suite._save_results({"foo": "bar"})
+
+
+def test_generate_algorithm_report_all_errors() -> None:
+    suite = BenchmarkSuite()
+    results = {
+        "configurations": [
+            {"algorithm": "svd", "k": 2, "error": "fail"},
+            {"algorithm": "svd", "k": 3, "error": "fail"},
+        ]
+    }
+    table = suite._generate_algorithm_report(results)
+    assert table is not None
+    assert len(list(table.rows)) == 2
+
+
+def test_generate_algorithm_report_mixed() -> None:
+    suite = BenchmarkSuite()
+    results = {
+        "configurations": [
+            {
+                "algorithm": "svd",
+                "k": 2,
+                "avg_time": 1.0,
+                "avg_memory_mb": 1.0,
+                "avg_rmse": 0.5,
+                "avg_mae": 0.4,
+            },
+            {"algorithm": "svd", "k": 3, "error": "fail"},
+        ]
+    }
+    table = suite._generate_algorithm_report(results)
+    assert table is not None
+    assert len(list(table.rows)) == 2
+
+
+def test_generate_dataset_report_all_errors() -> None:
+    suite = BenchmarkSuite()
+    results = {
+        "datasets": [
+            {"info": {"error": "fail", "path": "foo.csv"}, "results": []},
+            {"info": {"error": "fail", "path": "bar.csv"}, "results": []},
+        ]
+    }
+    table = suite._generate_dataset_report(results)
+    assert table is not None
+    assert len(list(table.rows)) == 2
+
+
+def test_generate_dataset_report_mixed() -> None:
+    suite = BenchmarkSuite()
+    results = {
+        "datasets": [
+            {
+                "info": {"shape": (2, 2), "path": "foo.csv"},
+                "results": [
+                    {
+                        "algorithm": "svd",
+                        "avg_time": 1.0,
+                        "avg_rmse": 0.5,
+                        "avg_mae": 0.4,
+                    },
+                    {"algorithm": "svd", "error": "fail"},
+                ],
+            }
+        ]
+    }
+    table = suite._generate_dataset_report(results)
+    assert table is not None
+    assert len(list(table.rows)) == 2

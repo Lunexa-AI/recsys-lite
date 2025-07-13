@@ -12,6 +12,8 @@ import numpy as np
 from scipy.sparse import csr_matrix, issparse
 from scipy.sparse.linalg import svds
 
+from lunexa_core.utils import as_dense
+
 # Type aliases for better type checking
 FloatMatrix = Union[np.ndarray, csr_matrix]
 FloatMatrixOptional = Optional[FloatMatrix]
@@ -149,17 +151,13 @@ class RecommenderSystem:
         predictions = self.predict(ratings)
 
         if exclude_rated:
-            if issparse(ratings):
-                known = ratings.toarray()
-            else:
-                known = ratings
+            known = as_dense(ratings)
 
             # Use top_n function with known items masking
             return top_n(predictions, known, n=n)
         else:
             # Simple top-n without exclusion
-            if issparse(predictions):
-                predictions = predictions.toarray()
+            predictions = as_dense(predictions)
 
             # Get top-n items for each user
             result = np.argsort(predictions, axis=1)[:, -n:][:, ::-1]
@@ -205,7 +203,7 @@ class RecommenderSystem:
         if self.use_sparse and not issparse(reconstructed):
             return csr_matrix(reconstructed)
         elif not self.use_sparse and issparse(reconstructed):
-            return reconstructed.toarray()
+            return as_dense(reconstructed)
         else:
             return reconstructed
 
@@ -308,8 +306,7 @@ def svd_reconstruct(
         raise ValueError("Matrix cannot have zero dimensions")
 
     # Auto-determine k if not provided
-    if k is None:
-        k = max(1, min(n_users, n_items) // 4)
+    k = max(1, min(n_users, n_items) // 4) if k is None else k
 
     if not 1 <= k <= min(n_users, n_items):
         raise ValueError(
@@ -333,7 +330,7 @@ def svd_reconstruct(
         if use_sparse and not issparse(reconstructed):
             return csr_matrix(reconstructed)
         elif not use_sparse and issparse(reconstructed):
-            return reconstructed.toarray()
+            return as_dense(reconstructed)
         else:
             return reconstructed
 
@@ -405,34 +402,45 @@ def top_n(est: FloatMatrix, known: FloatMatrix, *, n: int = 10) -> np.ndarray:
     Returns
     -------
     np.ndarray
-        Array of shape (n_users, n) containing item indices.
+        Array of shape (n_users, n_actual) containing item indices, where n_actual <= n.
     """
     if n <= 0:
         raise ValueError("n must be positive")
 
-    # Convert to dense for processing
-    if issparse(est):
-        est = est.toarray()
-    if issparse(known):
-        known = known.toarray()
+    est_dense = as_dense(est)
+    known_dense = as_dense(known)
+
+    if est_dense.shape != known_dense.shape:
+        raise ValueError("Matrices must have same shape")
+
+    n_users, n_items = est_dense.shape
+    if n_users == 0 or n_items == 0:
+        return np.empty((0, 0), dtype=int)
 
     # Use Numba-accelerated function if available
     if HAS_NUMBA:
-        result: np.ndarray = _top_n_numba(est, known, n)
+        result: np.ndarray = _top_n_numba(est_dense, known_dense, n)
         return result
     else:
-        # Fallback implementation
-        result = []
-        for user_preds, user_known in zip(est, known):
-            # Mask out known items
+        result_list: list[np.ndarray] = []
+        for user_preds, user_known in zip(est_dense, known_dense):
             masked_preds = user_preds.copy()
             masked_preds[user_known > 0] = -np.inf
-
-            # Get top-n items
-            top_indices = np.argsort(masked_preds)[::-1][:n]
-            result.append(top_indices)
-
-        return np.array(result)
+            unrated_count = np.sum(user_known <= 0)
+            n_actual = min(n, unrated_count)
+            if n_actual == 0:
+                result_list.append(np.empty((0,), dtype=int))
+                continue
+            top_indices = np.argsort(masked_preds)[::-1][:n_actual]
+            result_list.append(top_indices)
+        # Pad all arrays to the same length for consistent output
+        max_len = max((len(x) for x in result_list), default=0)
+        if max_len == 0:
+            return np.empty((n_users, 0), dtype=int)
+        padded = np.full((n_users, max_len), -1, dtype=int)
+        for i, arr in enumerate(result_list):
+            padded[i, : len(arr)] = arr
+        return padded
 
 
 def compute_rmse(predictions: FloatMatrix, actual: FloatMatrix) -> float:
@@ -455,25 +463,23 @@ def compute_rmse(predictions: FloatMatrix, actual: FloatMatrix) -> float:
         raise ValueError("Matrices must have same shape")
 
     # Convert to dense for computation
-    if issparse(predictions):
-        predictions = predictions.toarray()
-    if issparse(actual):
-        actual = actual.toarray()
+    predictions_dense = as_dense(predictions)
+    actual_dense = as_dense(actual)
 
     # Check for infinite values
-    if np.any(np.isinf(predictions)) or np.any(np.isinf(actual)):
+    if np.any(np.isinf(predictions_dense)) or np.any(np.isinf(actual_dense)):
         raise ValueError("Matrix contains infinite values")
 
     # Check for NaN values
-    if np.any(np.isnan(predictions)) or np.any(np.isnan(actual)):
+    if np.any(np.isnan(predictions_dense)) or np.any(np.isnan(actual_dense)):
         raise ValueError("Matrix contains NaN values")
 
     # Only consider non-zero (rated) items
-    mask = actual > 0
+    mask = actual_dense > 0
     if not np.any(mask):
         return 0.0
 
-    diff = predictions[mask] - actual[mask]
+    diff = predictions_dense[mask] - actual_dense[mask]
     return float(np.sqrt(np.mean(diff**2)))
 
 
@@ -497,25 +503,23 @@ def compute_mae(predictions: FloatMatrix, actual: FloatMatrix) -> float:
         raise ValueError("Matrices must have same shape")
 
     # Convert to dense for computation
-    if issparse(predictions):
-        predictions = predictions.toarray()
-    if issparse(actual):
-        actual = actual.toarray()
+    predictions_dense = as_dense(predictions)
+    actual_dense = as_dense(actual)
 
     # Check for infinite values
-    if np.any(np.isinf(predictions)) or np.any(np.isinf(actual)):
+    if np.any(np.isinf(predictions_dense)) or np.any(np.isinf(actual_dense)):
         raise ValueError("Matrix contains infinite values")
 
     # Check for NaN values
-    if np.any(np.isnan(predictions)) or np.any(np.isnan(actual)):
+    if np.any(np.isnan(predictions_dense)) or np.any(np.isnan(actual_dense)):
         raise ValueError("Matrix contains NaN values")
 
     # Only consider non-zero (rated) items
-    mask = actual > 0
+    mask = actual_dense > 0
     if not np.any(mask):
         return 0.0
 
-    diff = np.abs(predictions[mask] - actual[mask])
+    diff = np.abs(predictions_dense[mask] - actual_dense[mask])
     return float(np.mean(diff))
 
 
@@ -545,7 +549,7 @@ def benchmark_algorithm(
 
     import psutil
 
-    results = {
+    results: dict[str, Any] = {
         "algorithm": algorithm,
         "matrix_shape": ratings.shape,
         "sparsity": (
@@ -569,15 +573,8 @@ def benchmark_algorithm(
         end_memory = psutil.Process().memory_info().rss / 1024 / 1024  # MB
 
         # Compute accuracy metrics
-        if issparse(ratings):
-            actual = ratings.toarray()
-        else:
-            actual = ratings
-
-        if issparse(reconstructed):
-            predictions = reconstructed.toarray()
-        else:
-            predictions = reconstructed
+        actual = as_dense(ratings)
+        predictions = as_dense(reconstructed)
 
         rmse = compute_rmse(predictions, actual)
         mae = compute_mae(predictions, actual)

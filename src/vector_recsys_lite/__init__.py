@@ -1,27 +1,11 @@
-"""Vector recommender system plugin - Fast SVD-based collaborative filtering.
-
-A lightweight, zero-dependency recommender system built on NumPy with optional
-Numba JIT acceleration for high-performance collaborative filtering.
+"""
+vector_recsys_lite: Fast, zero-dep SVD recommender + ANN benchmark (2 s on 100k MovieLens)
 
 Features:
-    - Truncated SVD matrix factorization
-    - Top-N recommendation generation
-    - Optional Numba JIT acceleration
-    - Rich CLI interface
-    - Comprehensive benchmarking tools
-
-Example:
-    >>> from vector_recsys_lite import svd_reconstruct, top_n
-    >>> import numpy as np
-    >>>
-    >>> # Load your rating matrix (users × items)
-    >>> ratings = np.random.rand(100, 50).astype(np.float32)
-    >>>
-    >>> # Factorize with rank-10 SVD
-    >>> reconstructed = svd_reconstruct(ratings, k=10)
-    >>>
-    >>> # Get top-5 recommendations per user
-    >>> recommendations = top_n(reconstructed, ratings, n=5)
+- Zero dependencies (NumPy only)
+- SVD, kNN, and hybrid recommenders
+- CLI and Python API
+- Handles large, sparse datasets (100k x 10k+)
 """
 
 __version__ = "0.1.4"

@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from vector_recsys_lite.io import create_sample_ratings, load_ratings, save_ratings
+from lunexa_core.utils import as_dense
 
 
 class TestLoadRatings:
@@ -340,7 +341,7 @@ class TestIntegration:
 
             # Load back and compare
             loaded = load_ratings(temp_path)
-            np.testing.assert_array_equal(matrix.toarray(), loaded)
+            np.testing.assert_array_equal(as_dense(matrix), loaded)
         finally:
             Path(temp_path).unlink()
 
@@ -470,7 +471,7 @@ class TestIntegration:
 
             # Load back and compare
             loaded = load_ratings(temp_path)
-            np.testing.assert_array_equal(matrix.toarray(), loaded)
+            np.testing.assert_array_equal(as_dense(matrix), as_dense(loaded))
         finally:
             Path(temp_path).unlink()
 
@@ -589,5 +590,51 @@ class TestIntegration:
 
             # Check that file was created
             assert Path(temp_path).exists()
+        finally:
+            Path(temp_path).unlink()
+
+    def test_load_ratings_malformed_json(self) -> None:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
+            f.write('{"not_a_matrix": 123}')
+            temp_path = f.name
+        try:
+            with pytest.raises(ValueError, match="Failed to load JSON"):
+                load_ratings(temp_path)
+        finally:
+            Path(temp_path).unlink()
+
+    def test_load_ratings_malformed_parquet(self) -> None:
+        with tempfile.NamedTemporaryFile(
+            mode="wb", suffix=".parquet", delete=False
+        ) as f:
+            f.write(b"not a parquet file")
+            temp_path = f.name
+        try:
+            with pytest.raises(ValueError, match="Failed to load Parquet"):
+                load_ratings(temp_path)
+        finally:
+            Path(temp_path).unlink()
+
+    def test_load_ratings_missing_hdf5_dependency(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as f:
+            temp_path = f.name
+        monkeypatch.setitem(__import__("sys").modules, "h5py", None)
+        try:
+            with pytest.raises(ValueError, match="Failed to load HDF5"):
+                load_ratings(temp_path)
+        finally:
+            Path(temp_path).unlink()
+
+    def test_load_ratings_missing_sqlalchemy_dependency(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as f:
+            temp_path = f.name
+        monkeypatch.setitem(__import__("sys").modules, "sqlalchemy", None)
+        try:
+            with pytest.raises(ImportError):
+                load_ratings(temp_path)
         finally:
             Path(temp_path).unlink()

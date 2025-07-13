@@ -18,6 +18,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from scipy import sparse
 from scipy.sparse import csr_matrix
+from lunexa_core.utils import as_dense
 
 # Type aliases
 FloatMatrix = Union[np.ndarray, csr_matrix]
@@ -106,6 +107,7 @@ class DataLoader:
         path: Union[str, Path],
         delimiter: str = ",",
         missing_value: float = 0.0,
+        sparse_format: bool = False,
         **kwargs: Any,
     ) -> FloatMatrix:
         """Load matrix from CSV file."""
@@ -115,27 +117,51 @@ class DataLoader:
             raise FileNotFoundError(f"File not found: {path}")
 
         try:
-            # Try pandas first for better performance
+            # Try pandas first for better performance and missing value handling
+            import pandas as pd
+
             df = pd.read_csv(
                 path,
                 delimiter=delimiter,
                 header=None,
                 na_values=["", "nan", "na", "null", "NULL"],
-                keep_default_na=False,
+                keep_default_na=True,
             )
             matrix = df.fillna(missing_value).values.astype(np.float32)
-
         except Exception:
-            # Fallback to numpy
-            try:
-                matrix = np.loadtxt(path, delimiter=delimiter, dtype=np.float32)
-            except Exception:
-                # Fallback to manual CSV parsing
-                matrix = self._load_csv_manual(path, delimiter, missing_value)
+            # Fallback to manual CSV parsing for more control
+            rows = []
+            with open(path, encoding="utf-8") as f:
+                for row_num, line in enumerate(f):
+                    row = line.strip().split(delimiter)
+                    if not row or all(cell.strip() == "" for cell in row):
+                        continue
+                    float_row = []
+                    for col_num, cell in enumerate(row):
+                        cell = cell.strip()
+                        if cell == "" or cell.lower() in ("nan", "na", "null"):
+                            float_row.append(missing_value)
+                        else:
+                            try:
+                                float_row.append(float(cell))
+                            except ValueError:
+                                raise ValueError(
+                                    f"Invalid value at row {row_num + 1}, col {col_num + 1}: {cell}"
+                                ) from None
+                    rows.append(float_row)
+            if not rows:
+                raise ValueError("CSV must contain a 2D matrix") from None
+            matrix = np.array(rows, dtype=np.float32)
+            if matrix.ndim == 1:
+                matrix = matrix.reshape(1, -1)
 
         if matrix.ndim != 2:
             raise ValueError("CSV must contain a 2D matrix")
 
+        if sparse_format:
+            from scipy import sparse
+
+            return sparse.csr_matrix(matrix)
         return matrix
 
     def _load_csv_manual(
@@ -253,10 +279,7 @@ class DataLoader:
         **kwargs: Any,
     ) -> FloatMatrix:
         """Load matrix from SQLite database."""
-        if isinstance(path, Path):
-            db_url = f"sqlite:///{path}"
-        else:
-            db_url = str(path)
+        db_url = f"sqlite:///{path}" if isinstance(path, Path) else str(path)
 
         try:
             from sqlalchemy import create_engine, text
@@ -385,8 +408,7 @@ class DataSaver:
         """Save matrix to CSV file."""
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        if sparse.issparse(matrix):
-            matrix = matrix.toarray()
+        matrix = as_dense(matrix)
 
         # Validate matrix dimensions
         if matrix.ndim != 2:
@@ -400,8 +422,7 @@ class DataSaver:
         """Save matrix to JSON file."""
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        if sparse.issparse(matrix):
-            matrix = matrix.toarray()
+        matrix = as_dense(matrix)
 
         data = {
             "matrix": matrix.tolist(),
@@ -418,8 +439,7 @@ class DataSaver:
         """Save matrix to Parquet file."""
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        if sparse.issparse(matrix):
-            matrix = matrix.toarray()
+        matrix = as_dense(matrix)
 
         df = pd.DataFrame(matrix)
         df.to_parquet(path, index=False)
@@ -438,8 +458,7 @@ class DataSaver:
             path.parent.mkdir(parents=True, exist_ok=True)
 
             with h5py.File(path, "w") as f:
-                if sparse.issparse(matrix):
-                    matrix = matrix.toarray()
+                matrix = as_dense(matrix)
                 f.create_dataset(key, data=matrix, compression="gzip")
 
         except ImportError as e:
@@ -579,7 +598,7 @@ def load_ratings(
 
     # Load based on format
     if format == "csv":
-        return _load_csv(path, **kwargs)
+        return DataLoader()._load_csv(path, sparse_format=sparse_format, **kwargs)
     elif format == "json":
         return _load_json(path, **kwargs)
     elif format == "parquet":

@@ -16,6 +16,7 @@ from rich.table import Table
 from .algo import compute_mae, compute_rmse, svd_reconstruct, top_n
 from .benchmark import quick_benchmark
 from .io import create_sample_ratings, load_ratings, save_ratings
+from lunexa_core.utils import as_dense
 
 console = Console()
 
@@ -28,9 +29,7 @@ cli = typer.Typer(
 
 @cli.command()
 def predict(
-    csv: Path = typer.Argument(
-        ..., exists=True, help="Path to ratings CSV file (users × items)"
-    ),
+    csv: Path = typer.Argument(..., exists=True),
     k: int = typer.Option(
         50, "--rank", "-k", help="SVD rank (number of singular values to use)"
     ),
@@ -79,6 +78,8 @@ def predict(
             # Compute SVD reconstruction
             progress.update(task, description="Computing SVD reconstruction...")
             reconstructed = svd_reconstruct(ratings, k=k)
+            # Ensure dense for downstream metrics and recommendations
+            reconstructed = as_dense(reconstructed)
 
             # Generate recommendations
             progress.update(task, description="Generating recommendations...")
@@ -106,8 +107,8 @@ def predict(
 
         # Show metrics if requested
         if show_metrics:
-            rmse = compute_rmse(reconstructed, ratings)
-            mae = compute_mae(reconstructed, ratings)
+            rmse = compute_rmse(reconstructed, as_dense(ratings))
+            mae = compute_mae(reconstructed, as_dense(ratings))
 
             metrics_table = Table(title="Prediction Quality Metrics")
             metrics_table.add_column("Metric", style="cyan")
@@ -230,7 +231,7 @@ def sample(
         stats_table.add_column("Property", style="cyan")
         stats_table.add_column("Value", style="green")
 
-        stats_table.add_row("Shape", f"{ratings.shape[0]} × {ratings.shape[1]}")
+        stats_table.add_row("Shape", f"{ratings.shape[0]} x {ratings.shape[1]}")
         stats_table.add_row("Non-zero ratings", str(non_zero))
         stats_table.add_row("Actual sparsity", f"{actual_sparsity:.3f}")
         stats_table.add_row("Rating range", f"{rating_min:.1f} - {rating_max:.1f}")
