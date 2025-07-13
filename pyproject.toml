@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "vector-recsys-lite"
+version = "0.1.0"
+description = "Vector recommender system plugin (stub)"
+authors = ["Simbarashe Timire <stimire92@gmail.com>"]
+license = "MIT"
+readme = "../../docs/README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.13"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
