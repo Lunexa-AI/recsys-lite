@@ -16,12 +16,7 @@ from rich.console import Console
 from rich.table import Table
 from scipy import sparse
 
-from .algo import (
-    benchmark_algorithm,
-    compute_mae,
-    compute_rmse,
-    svd_reconstruct,
-)
+from .algo import benchmark_algorithm, compute_mae, compute_rmse, svd_reconstruct
 from .io import create_sample_ratings, load_ratings, save_ratings
 
 console = Console()

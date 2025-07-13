@@ -5,11 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from vector_recsys_lite.io import (
-    create_sample_ratings,
-    load_ratings,
-    save_ratings,
-)
+from vector_recsys_lite.io import create_sample_ratings, load_ratings, save_ratings
 
 
 class TestLoadRatings:
