@@ -3,7 +3,6 @@
 import numpy as np
 import pytest
 from scipy import sparse
-
 from vector_recsys_lite.algo import (
     compute_mae,
     compute_rmse,

@@ -75,7 +75,7 @@ disallow_untyped_defs = true
 target-version = "py39"
 line-length = 88
 select = ["E", "F", "I", "N", "W", "B", "C4", "UP"]
-ignore = ["E501", "B008", "C901", "UP007", "UP045"]
+ignore = ["E501", "B008", "C901", "UP007"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

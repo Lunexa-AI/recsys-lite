@@ -5,7 +5,6 @@ import tempfile
 
 import pytest
 from typer.testing import CliRunner
-
 from vector_recsys_lite.cli import cli
 
 

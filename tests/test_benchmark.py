@@ -6,7 +6,6 @@ from pathlib import Path
 import numpy as np
 import pytest
 from rich.table import Table
-
 from vector_recsys_lite.benchmark import (
     BenchmarkSuite,
     create_benchmark_dataset,
