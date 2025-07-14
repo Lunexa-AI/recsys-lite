@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from vector_recsys_lite.io import create_sample_ratings, load_ratings, save_ratings
-from lunexa_core.utils import as_dense
+from vector_recsys_lite.utils import as_dense
 
 
 class TestLoadRatings:

@@ -12,7 +12,7 @@ import numpy as np
 from scipy.sparse import csr_matrix, issparse
 from scipy.sparse.linalg import svds
 
-from lunexa_core.utils import as_dense
+from .utils import as_dense
 
 # Type aliases for better type checking
 FloatMatrix = Union[np.ndarray, csr_matrix]

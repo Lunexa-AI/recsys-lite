@@ -16,7 +16,7 @@ from rich.table import Table
 from .algo import compute_mae, compute_rmse, svd_reconstruct, top_n
 from .benchmark import quick_benchmark
 from .io import create_sample_ratings, load_ratings, save_ratings
-from lunexa_core.utils import as_dense
+from .utils import as_dense
 
 console = Console()
 
