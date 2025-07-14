@@ -18,7 +18,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from scipy import sparse
 from scipy.sparse import csr_matrix
-from lunexa_core.utils import as_dense
+from .utils import as_dense
 
 # Type aliases
 FloatMatrix = Union[np.ndarray, csr_matrix]

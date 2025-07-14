@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from scipy import sparse
 from vector_recsys_lite.algo import compute_mae, compute_rmse, svd_reconstruct, top_n
-from lunexa_core.utils import as_dense
+from vector_recsys_lite.utils import as_dense
 
 
 class TestSVDReconstruct:

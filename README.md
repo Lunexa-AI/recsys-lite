@@ -1,10 +1,14 @@
 # vector_recsys_lite 🧊
 
-> **Fast SVD-based recommender system with optional Numba acceleration**
-
-[![CI](https://github.com/Lunexa-AI/lunexa-labs/workflows/CI/badge.svg)](https://github.com/Lunexa-AI/lunexa-labs/actions)
+[![CI](https://github.com/Lunexa-AI/vector-recsys-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/Lunexa-AI/vector-recsys-lite/actions)
 [![PyPI](https://img.shields.io/pypi/v/vector_recsys_lite)](https://pypi.org/project/vector_recsys_lite/)
+[![Python](https://img.shields.io/pypi/pyversions/vector_recsys_lite.svg)](https://pypi.org/project/vector_recsys_lite/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Downloads](https://img.shields.io/pypi/dm/vector_recsys_lite)](https://pypi.org/project/vector_recsys_lite/)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://pre-commit.com/)
+[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
+> **Fast SVD-based recommender system with optional Numba acceleration**
 
 A production-ready, lightweight recommender system built with NumPy and SciPy. Features secure model serialization, multi-format I/O, and a beautiful CLI interface.
 
