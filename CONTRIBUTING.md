@@ -42,4 +42,4 @@ poetry run ruff src/ tests/
 - [ ] Code is documented and type-annotated
 - [ ] PR description is clear and complete
 
-Thank you for helping make this project better! 🚀 
+Thank you for helping make this project better! 🚀

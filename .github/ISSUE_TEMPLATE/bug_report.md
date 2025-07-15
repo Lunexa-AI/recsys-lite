@@ -25,4 +25,4 @@ If applicable, add screenshots to help explain your problem.
 - Package version: [e.g. 0.1.4]
 
 **Additional context**
-Add any other context about the problem here. 
+Add any other context about the problem here.
