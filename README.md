@@ -1,7 +1,6 @@
 # vector_recsys_lite 🧊
 
 [![CI](https://github.com/Lunexa-AI/vector-recsys-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/Lunexa-AI/vector-recsys-lite/actions)
-[![codecov](https://codecov.io/gh/Lunexa-AI/vector-recsys-lite/branch/main/graph/badge.svg)](https://codecov.io/gh/Lunexa-AI/vector-recsys-lite)
 [![PyPI](https://img.shields.io/pypi/v/vector_recsys_lite)](https://pypi.org/project/vector_recsys_lite/)
 [![Python](https://img.shields.io/pypi/pyversions/vector_recsys_lite.svg)](https://pypi.org/project/vector_recsys_lite/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
