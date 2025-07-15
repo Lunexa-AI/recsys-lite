@@ -15,4 +15,4 @@ Please do not disclose security issues publicly until they have been resolved.
 ## Security Best Practices
 - Keep your dependencies up to date.
 - Use virtual environments for development.
-- Never share sensitive data in issues or pull requests. 
+- Never share sensitive data in issues or pull requests.

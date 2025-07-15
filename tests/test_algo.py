@@ -757,7 +757,6 @@ def test_recommend_invalid_n():
 
 
 def test_recommender_unsupported_algorithm():
-
     from vector_recsys_lite.algo import RecommenderSystem
 
     with pytest.raises(ValueError):
