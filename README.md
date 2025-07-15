@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Lunexa-AI/vector-recsys-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/Lunexa-AI/vector-recsys-lite/actions)
 [![PyPI](https://img.shields.io/pypi/v/vector_recsys_lite)](https://pypi.org/project/vector_recsys_lite/)
-[![Python](https://img.shields.io/pypi/pyversions/vector_recsys_lite.svg)](https://pypi.org/project/vector_recsys_lite/)
+[![Python](https://img.shields.io/badge/python->=3.9-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Downloads](https://img.shields.io/pypi/dm/vector_recsys_lite)](https://pypi.org/project/vector_recsys_lite/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://pre-commit.com/)
