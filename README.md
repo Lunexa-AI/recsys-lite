@@ -614,3 +614,5 @@ make ci
 
 - All commands work on Linux, macOS, and CI.
 - See CONTRIBUTING.md for more details.
+
+<!-- Trigger CI: workflow file updated -->
