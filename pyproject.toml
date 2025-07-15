@@ -35,13 +35,16 @@ twine = "^6.1.0"
 pytest-cov = "^6.2.1"
 sphinx = "<6"
 sphinx-rtd-theme = "<2"
+black = "^25.1.0"
+isort = "^6.0.1"
+ruff = "^0.12.3"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
+python = ">=3.9,<3.14"
 numpy = ">=1.21.0"
 scipy = ">=1.7.0"
 joblib = ">=1.1.0"
@@ -59,3 +62,6 @@ parquet = ["pyarrow"]
 hdf5 = ["h5py"]
 sqlite = ["sqlalchemy"]
 all = ["numba", "pandas", "pyarrow", "h5py", "sqlalchemy"]
+
+[tool.isort]
+profile = "black"

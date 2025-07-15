@@ -5,6 +5,7 @@ import tempfile
 
 import pytest
 from typer.testing import CliRunner
+
 from vector_recsys_lite.cli import cli
 
 
@@ -250,3 +251,47 @@ class TestCLI:
         finally:
             if os.path.exists(temp_file2.name):
                 os.unlink(temp_file2.name)
+
+
+def test_cli_missing_input_file():
+    runner = CliRunner()
+    result = runner.invoke(cli, ["predict", "does_not_exist.csv"])
+    assert result.exit_code != 0
+    assert "does not exist" in result.output
+
+
+def test_cli_invalid_subcommand():
+    runner = CliRunner()
+    result = runner.invoke(cli, ["not_a_command"])
+    assert result.exit_code != 0
+    assert "No such command" in result.output or "Usage" in result.output
+
+
+def test_cli_output_file_collision(tmp_path):
+    runner = CliRunner()
+    # Create a file that already exists
+    output_file = tmp_path / "out.csv"
+    output_file.write_text("existing")
+    result = runner.invoke(cli, ["sample", str(output_file)])
+    assert result.exit_code == 0
+    assert output_file.exists()
+
+
+def test_cli_permission_error(tmp_path):
+    import os
+
+    runner = CliRunner()
+    # Create a directory with no write permission
+    no_write_dir = tmp_path / "no_write"
+    no_write_dir.mkdir()
+    os.chmod(no_write_dir, 0o400)
+    try:
+        output_file = no_write_dir / "out.csv"
+        result = runner.invoke(cli, ["sample", str(output_file)])
+        assert result.exit_code != 0
+        assert (
+            "Permission denied" in result.output
+            or "permission" in result.output.lower()
+        )
+    finally:
+        os.chmod(no_write_dir, 0o700)

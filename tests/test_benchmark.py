@@ -2,17 +2,19 @@
 
 import tempfile
 from pathlib import Path
+from typing import Any
+from unittest import mock
 
 import numpy as np
 import pytest
 from rich.table import Table
+from scipy import sparse
+
 from vector_recsys_lite.benchmark import (
     BenchmarkSuite,
     create_benchmark_dataset,
     quick_benchmark,
 )
-from unittest import mock
-from typing import Any
 
 
 class TestBenchmarkSuite:
@@ -128,8 +130,6 @@ class TestQuickBenchmark:
 
     def test_quick_benchmark_sparse_matrix(self) -> None:
         """Test quick benchmark with sparse matrix."""
-        from scipy import sparse
-
         matrix = sparse.csr_matrix(np.random.rand(10, 8).astype(np.float32))
 
         results = quick_benchmark(matrix, k=2, n_runs=1)
@@ -447,3 +447,39 @@ def test_generate_dataset_report_mixed() -> None:
     table = suite._generate_dataset_report(results)
     assert table is not None
     assert len(list(table.rows)) == 2
+
+
+def test_run_algorithm_benchmark_unknown_algorithm():
+    from vector_recsys_lite.benchmark import BenchmarkSuite
+
+    suite = BenchmarkSuite()
+    matrix = np.random.rand(5, 5).astype(np.float32)
+    results = suite.run_algorithm_benchmark(
+        ratings=matrix,
+        algorithms=["unknown"],
+        k_values=[2],
+        n_runs=1,
+        save_results=False,
+    )
+    # Should contain an error in the configurations
+    assert any(
+        "error" in config and "Unknown algorithm" in config["error"]
+        for config in results["configurations"]
+    )
+
+
+def test_benchmark_suite_save_results_file_error(tmp_path):
+    from vector_recsys_lite.benchmark import BenchmarkSuite
+
+    suite = BenchmarkSuite(output_dir=tmp_path)
+    # Simulate a directory that cannot be written to
+    results = {"matrix_info": {}, "configurations": [], "summary": {}}
+    # Remove write permissions
+    import os
+
+    os.chmod(tmp_path, 0o400)
+    try:
+        with pytest.raises(Exception):
+            suite._save_results(results)
+    finally:
+        os.chmod(tmp_path, 0o700)

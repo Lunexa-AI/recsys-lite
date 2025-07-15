@@ -72,7 +72,9 @@ class RecommenderSystem:
         self._fitted = False
 
         if algorithm not in ["svd"]:
-            raise ValueError(f"Unsupported algorithm: '{algorithm}'. Supported: ['svd'].")
+            raise ValueError(
+                f"Unsupported algorithm: '{algorithm}'. Supported: ['svd']."
+            )
 
     def is_fitted(self) -> bool:
         """Check if the model has been fitted."""
@@ -120,7 +122,9 @@ class RecommenderSystem:
             Predicted ratings matrix.
         """
         if not self._fitted:
-            raise RuntimeError("Model must be fitted before making predictions. Call .fit() first.")
+            raise RuntimeError(
+                "Model must be fitted before making predictions. Call .fit() first."
+            )
 
         if self.algorithm == "svd":
             if self._model is None:
@@ -339,7 +343,9 @@ def svd_reconstruct(
             return reconstructed
 
     except np.linalg.LinAlgError as e:
-        raise RuntimeError(f"SVD computation failed: {e}. Check if your matrix is well-conditioned and k is appropriate.") from e
+        raise RuntimeError(
+            f"SVD computation failed: {e}. Check if your matrix is well-conditioned and k is appropriate."
+        ) from e
 
 
 @jit(cache=True, fastmath=True)  # type: ignore[misc]
@@ -415,7 +421,9 @@ def top_n(est: FloatMatrix, known: FloatMatrix, *, n: int = 10) -> np.ndarray:
     known_dense = as_dense(known)
 
     if est_dense.shape != known_dense.shape:
-        raise ValueError(f"Estimated and known matrices must have the same shape. Got {est_dense.shape} and {known_dense.shape}.")
+        raise ValueError(
+            f"Estimated and known matrices must have the same shape. Got {est_dense.shape} and {known_dense.shape}."
+        )
 
     n_users, n_items = est_dense.shape
     if n_users == 0 or n_items == 0:
@@ -464,7 +472,9 @@ def compute_rmse(predictions: FloatMatrix, actual: FloatMatrix) -> float:
         RMSE value.
     """
     if predictions.shape != actual.shape:
-        raise ValueError(f"Predictions and actual matrices must have the same shape. Got {predictions.shape} and {actual.shape}.")
+        raise ValueError(
+            f"Predictions and actual matrices must have the same shape. Got {predictions.shape} and {actual.shape}."
+        )
 
     # Convert to dense for computation
     predictions_dense = as_dense(predictions)
@@ -504,7 +514,9 @@ def compute_mae(predictions: FloatMatrix, actual: FloatMatrix) -> float:
         MAE value.
     """
     if predictions.shape != actual.shape:
-        raise ValueError(f"Predictions and actual matrices must have the same shape. Got {predictions.shape} and {actual.shape}.")
+        raise ValueError(
+            f"Predictions and actual matrices must have the same shape. Got {predictions.shape} and {actual.shape}."
+        )
 
     # Convert to dense for computation
     predictions_dense = as_dense(predictions)
@@ -609,6 +621,7 @@ def benchmark_algorithm(
     )
 
     return results
+
 
 __all__ = [
     "RecommenderSystem",
