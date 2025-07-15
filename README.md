@@ -8,19 +8,18 @@
 
 > **Fast SVD-based recommender system with optional Numba acceleration**
 
-RecsysLite is a lightweight yet production-ready Python library for building personalized recommendation systems in just a few lines of code. Leveraging NumPy and SciPy for blazing-fast matrix operations, it keeps your dependency footprint minimal while delivering enterprise-grade features:
+A production-ready, lightweight recommender system built with NumPy and SciPy. Features secure model serialization, multi-format I/O, and a beautiful CLI interface.
 
-Secure model persistence – Cryptographically signed serialization guards against tampering in every environment.
+## ✨ Key Features
 
-Multi-format I/O – Seamlessly ingest or export data in CSV, Parquet, JSON, SQL, or Pandas DataFrames.
+- **🔒 Secure Model Persistence** - Cryptographically signed serialization protects against model tampering
+- **📊 Multi-format I/O** - Native support for CSV, Parquet, JSON, SQL, and Pandas DataFrames
+- **🎨 Rich CLI Interface** - Train, evaluate, and serve models with colorized terminal output
+- **⚡ High Performance** - Optimized NumPy/SciPy operations with optional Numba acceleration
+- **🔧 Extensible Design** - Item-based, user-based, and hybrid algorithms with sensible defaults
+- **☁️ Cloud-Ready** - Stateless architecture optimized for serverless and containerized deployments
 
-Elegant CLI – Train, evaluate, and serve models straight from your terminal with rich, colorized output.
-
-Plug-and-play algorithms – Item-, user-, and hybrid-based recommenders with sensible defaults that you can extend.
-
-Cloud-friendly – Stateless design and tiny wheel size make it easy to drop into serverless or containerized workflows.
-
-From rapid prototyping on a laptop to scaling in the cloud, RecsysLite keeps your stack light and your recommendations relevant—so you can focus on delighting users, not wrestling with heavyweight frameworks.
+Built for both rapid prototyping and production deployment, vector-recsys-lite delivers enterprise-grade recommendation capabilities without the complexity of heavyweight frameworks.
 
 ## 🚀 Quick Start
 
