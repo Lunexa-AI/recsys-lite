@@ -1,5 +1,3 @@
-# vector_recsys_lite 🧊
-
 [![CI](https://github.com/Lunexa-AI/vector-recsys-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/Lunexa-AI/vector-recsys-lite/actions)
 [![PyPI](https://img.shields.io/pypi/v/vector_recsys_lite)](https://pypi.org/project/vector_recsys_lite/)
 [![Python](https://img.shields.io/badge/python->=3.9-blue.svg)](https://python.org)
@@ -10,7 +8,19 @@
 
 > **Fast SVD-based recommender system with optional Numba acceleration**
 
-A production-ready, lightweight recommender system built with NumPy and SciPy. Features secure model serialization, multi-format I/O, and a beautiful CLI interface.
+RecsysLite is a lightweight yet production-ready Python library for building personalized recommendation systems in just a few lines of code. Leveraging NumPy and SciPy for blazing-fast matrix operations, it keeps your dependency footprint minimal while delivering enterprise-grade features:
+
+Secure model persistence – Cryptographically signed serialization guards against tampering in every environment.
+
+Multi-format I/O – Seamlessly ingest or export data in CSV, Parquet, JSON, SQL, or Pandas DataFrames.
+
+Elegant CLI – Train, evaluate, and serve models straight from your terminal with rich, colorized output.
+
+Plug-and-play algorithms – Item-, user-, and hybrid-based recommenders with sensible defaults that you can extend.
+
+Cloud-friendly – Stateless design and tiny wheel size make it easy to drop into serverless or containerized workflows.
+
+From rapid prototyping on a laptop to scaling in the cloud, RecsysLite keeps your stack light and your recommendations relevant—so you can focus on delighting users, not wrestling with heavyweight frameworks.
 
 ## 🚀 Quick Start
 
