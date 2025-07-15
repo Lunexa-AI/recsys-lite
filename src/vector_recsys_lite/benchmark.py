@@ -22,6 +22,11 @@ from .utils import as_dense
 
 console = Console()
 
+__all__ = [
+    "BenchmarkSuite",
+    "quick_benchmark",
+]
+
 
 class BenchmarkSuite:
     """Comprehensive benchmarking suite for recommender systems."""

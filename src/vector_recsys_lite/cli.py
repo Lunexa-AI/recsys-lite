@@ -26,6 +26,8 @@ cli = typer.Typer(
     rich_markup_mode="rich",
 )
 
+__all__ = ["cli"]
+
 
 @cli.command()
 def predict(

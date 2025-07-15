@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, "*" ]
+  pull_request:
+    branches: [ main, "*" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11, 3.12]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install Poetry
+        run: |
+          pip install poetry
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+      - name: Lint
+        run: |
+          make lint
+      - name: Test with coverage
+        run: |
+          make coverage
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage.xml
+          fail_ci_if_error: true 
+  benchmark:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install Poetry
+        run: |
+          pip install poetry
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+      - name: Run benchmark smoke test
+        run: |
+          poetry run vector-recsys sample test_bench.csv --users 10 --items 10
+          poetry run vector-recsys benchmark test_bench.csv --rank 2 --iterations 1 
