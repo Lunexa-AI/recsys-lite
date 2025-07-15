@@ -584,3 +584,33 @@ We strive to maintain backward compatibility and provide clear deprecation warni
 - Be removed only after clear notice in the changelog and release notes.
 
 If you rely on a feature that is marked for deprecation, please open an issue to discuss migration strategies.
+
+## 👩‍💻 Developer Quickstart
+
+To get started as a contributor or to simulate CI locally:
+
+```sh
+# 1. Set up your full dev environment (Poetry, pre-commit, all dev deps)
+make dev
+
+# 2. Run all linters
+make lint
+
+# 3. Run all tests with coverage
+make test
+
+# 4. Run all pre-commit hooks
+make precommit
+
+# 5. Build the Docker image
+make docker-build
+
+# 6. Run tests inside Docker (as CI does)
+make docker-test
+
+# 7. Simulate the full CI pipeline (lint, test, coverage, Docker)
+make ci
+```
+
+- All commands work on Linux, macOS, and CI.
+- See CONTRIBUTING.md for more details.
