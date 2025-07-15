@@ -1,9 +1,20 @@
 """Tests for the algorithm module."""
 
+import os
+import tempfile
+
 import numpy as np
 import pytest
 from scipy import sparse
-from vector_recsys_lite.algo import compute_mae, compute_rmse, svd_reconstruct, top_n
+
+from vector_recsys_lite.algo import (
+    RecommenderSystem,
+    benchmark_algorithm,
+    compute_mae,
+    compute_rmse,
+    svd_reconstruct,
+    top_n,
+)
 from vector_recsys_lite.utils import as_dense
 
 
@@ -56,11 +67,15 @@ class TestSVDReconstruct:
     def test_invalid_matrix(self) -> None:
         """Test error handling for invalid matrix."""
         # 1D array
-        with pytest.raises(ValueError, match="Matrix must be 2D"):
+        with pytest.raises(
+            ValueError, match="Input matrix must be 2D \(users x items\), got 1D\."
+        ):
             svd_reconstruct(np.array([1, 2, 3], dtype=np.float32))
 
         # Empty matrix
-        with pytest.raises(ValueError, match="Matrix cannot have zero dimensions"):
+        with pytest.raises(
+            ValueError, match="Input matrix cannot have zero dimensions\."
+        ):
             svd_reconstruct(np.array([[]], dtype=np.float32))
 
     def test_svd_reconstruction_quality(self) -> None:
@@ -153,7 +168,9 @@ class TestTopN:
 
         # Different shapes
         est_wrong_shape = np.random.rand(2, 4).astype(np.float32)
-        with pytest.raises(ValueError, match="Matrices must have same shape"):
+        with pytest.raises(
+            ValueError, match="Estimated and known matrices must have the same shape"
+        ):
             top_n(est_wrong_shape, mat, n=2)
 
     def test_empty_matrix(self) -> None:
@@ -271,10 +288,14 @@ class TestMetrics:
         predictions = np.array([[4.0, 3.0]], dtype=np.float32)
         actual = np.array([[4.0, 3.0, 5.0]], dtype=np.float32)
 
-        with pytest.raises(ValueError, match="Matrices must have same shape"):
+        with pytest.raises(
+            ValueError, match="Predictions and actual matrices must have the same shape"
+        ):
             compute_rmse(predictions, actual)
 
-        with pytest.raises(ValueError, match="Matrices must have same shape"):
+        with pytest.raises(
+            ValueError, match="Predictions and actual matrices must have the same shape"
+        ):
             compute_mae(predictions, actual)
 
     def test_sparse_matrix_metrics(self) -> None:
@@ -326,10 +347,14 @@ class TestMetrics:
         predictions = np.array([[np.inf, 3.0, 5.0]], dtype=np.float32)
         actual = np.array([[5.0, 3.0, 4.0]], dtype=np.float32)
 
-        with pytest.raises(ValueError, match="Matrix contains infinite values"):
+        with pytest.raises(
+            ValueError, match="Input matrices must not contain infinite values"
+        ):
             compute_rmse(predictions, actual)
 
-        with pytest.raises(ValueError, match="Matrix contains infinite values"):
+        with pytest.raises(
+            ValueError, match="Input matrices must not contain infinite values"
+        ):
             compute_mae(predictions, actual)
 
     def test_metrics_nan_values(self) -> None:
@@ -337,10 +362,14 @@ class TestMetrics:
         predictions = np.array([[np.nan, 3.0, 5.0]], dtype=np.float32)
         actual = np.array([[5.0, 3.0, 4.0]], dtype=np.float32)
 
-        with pytest.raises(ValueError, match="Matrix contains NaN values"):
+        with pytest.raises(
+            ValueError, match="Input matrices must not contain NaN values"
+        ):
             compute_rmse(predictions, actual)
 
-        with pytest.raises(ValueError, match="Matrix contains NaN values"):
+        with pytest.raises(
+            ValueError, match="Input matrices must not contain NaN values"
+        ):
             compute_mae(predictions, actual)
 
 
@@ -349,8 +378,6 @@ class TestRecommenderSystem:
 
     def test_basic_usage(self) -> None:
         """Test basic recommender system usage."""
-        from vector_recsys_lite.algo import RecommenderSystem
-
         # Create test data
         ratings = np.array([[5, 3, 0, 1], [0, 0, 4, 5]], dtype=np.float32)
 
@@ -371,8 +398,6 @@ class TestRecommenderSystem:
 
     def test_sparse_matrix_support(self) -> None:
         """Test sparse matrix support."""
-        from vector_recsys_lite.algo import RecommenderSystem
-
         # Create sparse test data
         ratings = sparse.csr_matrix(
             np.array([[5, 3, 0, 1], [0, 0, 4, 5]], dtype=np.float32)
@@ -390,15 +415,11 @@ class TestRecommenderSystem:
 
     def test_invalid_algorithm(self) -> None:
         """Test error handling for invalid algorithm."""
-        from vector_recsys_lite.algo import RecommenderSystem
-
-        with pytest.raises(ValueError, match="Unsupported algorithm: invalid"):
+        with pytest.raises(ValueError, match="Unsupported algorithm: 'invalid'"):
             RecommenderSystem(algorithm="invalid")
 
     def test_predict_before_fit(self) -> None:
         """Test error handling when predicting before fitting."""
-        from vector_recsys_lite.algo import RecommenderSystem
-
         recommender = RecommenderSystem()
         ratings = np.array([[5, 3, 0, 1]], dtype=np.float32)
 
@@ -407,8 +428,6 @@ class TestRecommenderSystem:
 
     def test_recommend_before_fit(self) -> None:
         """Test error handling when recommending before fitting."""
-        from vector_recsys_lite.algo import RecommenderSystem
-
         recommender = RecommenderSystem()
         ratings = np.array([[5, 3, 0, 1]], dtype=np.float32)
 
@@ -417,8 +436,6 @@ class TestRecommenderSystem:
 
     def test_invalid_k_parameter(self) -> None:
         """Test error handling for invalid k parameter."""
-        from vector_recsys_lite.algo import RecommenderSystem
-
         recommender = RecommenderSystem(algorithm="svd")
         # Use a 2x2 matrix so k=10 is invalid (must be <= 2)
         ratings = np.array([[5, 3], [0, 1]], dtype=np.float32)
@@ -432,8 +449,6 @@ class TestRecommenderSystem:
 
     def test_recommend_with_invalid_n(self) -> None:
         """Test error handling for invalid n parameter."""
-        from vector_recsys_lite.algo import RecommenderSystem
-
         recommender = RecommenderSystem(algorithm="svd")
         ratings = np.array([[5, 3, 0, 1]], dtype=np.float32)
         recommender.fit(ratings, k=2)
@@ -443,8 +458,6 @@ class TestRecommenderSystem:
 
     def test_recommend_with_shape_mismatch(self) -> None:
         """Test error handling for shape mismatch in recommend."""
-        from vector_recsys_lite.algo import RecommenderSystem
-
         recommender = RecommenderSystem(algorithm="svd")
         ratings = np.array([[5, 3, 0, 1]], dtype=np.float32)
         recommender.fit(ratings, k=2)
@@ -452,13 +465,13 @@ class TestRecommenderSystem:
         # Different shape for recommendations
         different_ratings = np.array([[5, 3, 0, 1, 2]], dtype=np.float32)
 
-        with pytest.raises(ValueError, match="Matrices must have same shape"):
+        with pytest.raises(
+            ValueError, match="Estimated and known matrices must have the same shape"
+        ):
             recommender.recommend(different_ratings, n=2)
 
     def test_model_persistence(self) -> None:
         """Test model save and load functionality."""
-        from vector_recsys_lite.algo import RecommenderSystem
-
         recommender = RecommenderSystem(algorithm="svd")
         ratings = np.array([[5, 3, 0, 1], [0, 0, 4, 5]], dtype=np.float32)
         recommender.fit(ratings, k=2)
@@ -474,15 +487,11 @@ class TestRecommenderSystem:
         assert predictions.shape == ratings.shape
 
         # Clean up
-        import os
-
         if os.path.exists("test_model.pkl"):
             os.remove("test_model.pkl")
 
     def test_model_parameters(self) -> None:
         """Test model parameter access."""
-        from vector_recsys_lite.algo import RecommenderSystem
-
         recommender = RecommenderSystem(algorithm="svd", use_sparse=True)
         ratings = np.array([[5, 3, 0, 1]], dtype=np.float32)
         recommender.fit(ratings, k=2)
@@ -495,8 +504,6 @@ class TestRecommenderSystem:
 
     def test_model_state(self) -> None:
         """Test model state checking."""
-        from vector_recsys_lite.algo import RecommenderSystem
-
         recommender = RecommenderSystem()
 
         # Should not be fitted initially
@@ -511,8 +518,6 @@ class TestRecommenderSystem:
 
     def test_model_clone(self) -> None:
         """Test model cloning functionality."""
-        from vector_recsys_lite.algo import RecommenderSystem
-
         recommender = RecommenderSystem(algorithm="svd", use_sparse=True)
         ratings = np.array([[5, 3, 0, 1]], dtype=np.float32)
         recommender.fit(ratings, k=2)
@@ -528,8 +533,6 @@ class TestRecommenderSystem:
 
     def test_model_reset(self) -> None:
         """Test model reset functionality."""
-        from vector_recsys_lite.algo import RecommenderSystem
-
         recommender = RecommenderSystem(algorithm="svd")
         ratings = np.array([[5, 3, 0, 1]], dtype=np.float32)
         recommender.fit(ratings, k=2)
@@ -598,3 +601,317 @@ class TestIntegration:
         # Check results
         assert len(recommendations) == ratings.shape[0]
         assert all(len(recs) <= 5 for recs in recommendations)
+
+
+class TestRecommenderSystemAdvanced:
+    def test_save_and_load(self):
+        ratings = np.array([[5, 3, 0, 1], [0, 0, 4, 5]], dtype=np.float32)
+        recommender = RecommenderSystem(algorithm="svd")
+        recommender.fit(ratings, k=2)
+        with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
+            path = f.name
+        try:
+            recommender.save(path)
+            loaded = RecommenderSystem.load(path)
+            pred1 = recommender.predict(ratings)
+            pred2 = loaded.predict(ratings)
+            # Compare as dense arrays for both sparse and dense
+            if sparse.issparse(pred1):
+                pred1 = pred1.toarray()
+            if sparse.issparse(pred2):
+                pred2 = pred2.toarray()
+            np.testing.assert_allclose(pred1, pred2, rtol=1e-5, atol=1e-6)
+        finally:
+            os.remove(path)
+
+    def test_clone_and_get_params(self):
+        recommender = RecommenderSystem(algorithm="svd", use_sparse=False)
+        params = recommender.get_params()
+        assert params["algorithm"] == "svd"
+        assert params["use_sparse"] is False
+        clone = recommender.clone()
+        assert isinstance(clone, RecommenderSystem)
+        assert not clone.is_fitted()
+        assert clone.get_params() == params
+
+    def test_reset_and_is_fitted(self):
+        ratings = np.array([[5, 3, 0, 1], [0, 0, 4, 5]], dtype=np.float32)
+        recommender = RecommenderSystem(algorithm="svd")
+        recommender.fit(ratings, k=2)
+        assert recommender.is_fitted()
+        recommender.reset()
+        assert not recommender.is_fitted()
+        with pytest.raises(RuntimeError):
+            recommender.predict(ratings)
+
+    def test_private_methods_dense_and_sparse(self):
+        recommender = RecommenderSystem(algorithm="svd")
+        dense = np.random.rand(5, 4).astype(np.float32)
+        sparse_mat = sparse.csr_matrix(dense)
+        # _fit_svd_dense
+        model_dense = recommender._fit_svd_dense(dense, k=2)
+        assert set(model_dense.keys()) == {"u", "s", "vt", "k"}
+        # _fit_svd_sparse
+        model_sparse = recommender._fit_svd_sparse(sparse_mat, k=2)
+        assert set(model_sparse.keys()) == {"u", "s", "vt", "k"}
+        # _predict_svd
+        recommender._model = model_dense
+        pred = recommender._predict_svd(dense)
+        assert pred.shape == dense.shape
+        recommender.use_sparse = True
+        pred_sparse = recommender._predict_svd(dense)
+        assert hasattr(pred_sparse, "shape")
+        recommender.use_sparse = False
+        recommender._model = model_sparse
+        pred2 = recommender._predict_svd(dense)
+        assert pred2.shape == dense.shape
+
+
+def test_svd_reconstruct_invalid_sparse(monkeypatch):
+    import scipy.sparse
+
+    from vector_recsys_lite.algo import svd_reconstruct
+
+    mat = scipy.sparse.csr_matrix((0, 0), dtype=np.float32)
+    # k too large for sparse
+    with pytest.raises(ValueError):
+        svd_reconstruct(mat, k=10)
+    # k too small
+    with pytest.raises(ValueError):
+        svd_reconstruct(mat, k=0)
+
+
+def test_svd_reconstruct_runtime_error(monkeypatch):
+    from vector_recsys_lite.algo import svd_reconstruct
+
+    # Patch np.linalg.svd to raise
+    def fake_svd(*a, **k):
+        raise np.linalg.LinAlgError("fail")
+
+    monkeypatch.setattr(np.linalg, "svd", fake_svd)
+    mat = np.random.rand(3, 3).astype(np.float32)
+    with pytest.raises(RuntimeError):
+        svd_reconstruct(mat, k=2)
+
+
+def test_top_n_all_rated():
+    from vector_recsys_lite.algo import top_n
+
+    mat = np.ones((2, 3), dtype=np.float32)
+    est = np.ones((2, 3), dtype=np.float32)
+    recs = top_n(est, mat, n=2)
+    assert recs.shape[1] == 0
+
+
+def test_top_n_zero_n():
+    from vector_recsys_lite.algo import top_n
+
+    mat = np.zeros((2, 3), dtype=np.float32)
+    est = np.ones((2, 3), dtype=np.float32)
+    with pytest.raises(ValueError):
+        top_n(est, mat, n=0)
+
+
+def test_compute_rmse_all_zero():
+    from vector_recsys_lite.algo import compute_rmse
+
+    pred = np.zeros((2, 3), dtype=np.float32)
+    actual = np.zeros((2, 3), dtype=np.float32)
+    assert compute_rmse(pred, actual) == 0.0
+
+
+def test_compute_mae_all_zero():
+    from vector_recsys_lite.algo import compute_mae
+
+    pred = np.zeros((2, 3), dtype=np.float32)
+    actual = np.zeros((2, 3), dtype=np.float32)
+    assert compute_mae(pred, actual) == 0.0
+
+
+def test_predict_unfitted():
+    from vector_recsys_lite.algo import RecommenderSystem
+
+    rec = RecommenderSystem()
+    with pytest.raises(RuntimeError):
+        rec.predict(np.ones((2, 2), dtype=np.float32))
+
+
+def test_predict_model_none():
+    from vector_recsys_lite.algo import RecommenderSystem
+
+    rec = RecommenderSystem()
+    rec._fitted = True
+    rec._model = None
+    with pytest.raises(RuntimeError):
+        rec.predict(np.ones((2, 2), dtype=np.float32))
+
+
+def test_recommend_invalid_n():
+    from vector_recsys_lite.algo import RecommenderSystem
+
+    rec = RecommenderSystem()
+    rec._fitted = True
+    rec._model = {"u": np.eye(2), "s": np.ones(2), "vt": np.eye(2), "k": 2}
+    with pytest.raises(ValueError):
+        rec.recommend(np.ones((2, 2), dtype=np.float32), n=0)
+
+
+def test_recommender_unsupported_algorithm():
+
+    from vector_recsys_lite.algo import RecommenderSystem
+
+    with pytest.raises(ValueError):
+        RecommenderSystem(algorithm="unknown")
+
+
+def test_svd_reconstruct_invalid_k():
+    import numpy as np
+
+    from vector_recsys_lite.algo import svd_reconstruct
+
+    mat = np.ones((3, 3), dtype=np.float32)
+    with pytest.raises(ValueError):
+        svd_reconstruct(mat, k=0)
+    with pytest.raises(ValueError):
+        svd_reconstruct(mat, k=10)
+
+
+def test_svd_reconstruct_1d_empty():
+    import numpy as np
+
+    from vector_recsys_lite.algo import svd_reconstruct
+
+    with pytest.raises(ValueError):
+        svd_reconstruct(np.array([1, 2, 3], dtype=np.float32))
+    with pytest.raises(ValueError):
+        svd_reconstruct(np.array([[]], dtype=np.float32))
+
+
+def test_svd_reconstruct_svd_failure(monkeypatch):
+    import numpy as np
+
+    from vector_recsys_lite.algo import svd_reconstruct
+
+    def fake_svd(*a, **k):
+        raise np.linalg.LinAlgError("fail")
+
+    monkeypatch.setattr(np.linalg, "svd", fake_svd)
+    mat = np.ones((3, 3), dtype=np.float32)
+    with pytest.raises(RuntimeError):
+        svd_reconstruct(mat, k=2)
+
+
+def test_top_n_edge_cases():
+    import numpy as np
+
+    from vector_recsys_lite.algo import top_n
+
+    # All items rated
+    mat = np.ones((2, 3), dtype=np.float32)
+    est = np.ones((2, 3), dtype=np.float32)
+    recs = top_n(est, mat, n=2)
+    assert recs.shape[1] == 0
+    # n=0
+    with pytest.raises(ValueError):
+        top_n(est, mat, n=0)
+
+
+def test_compute_rmse_mae_shape_mismatch():
+    import numpy as np
+
+    from vector_recsys_lite.algo import compute_mae, compute_rmse
+
+    pred = np.ones((2, 2), dtype=np.float32)
+    actual = np.ones((2, 3), dtype=np.float32)
+    with pytest.raises(ValueError):
+        compute_rmse(pred, actual)
+    with pytest.raises(ValueError):
+        compute_mae(pred, actual)
+
+
+def test_compute_rmse_shape_mismatch():
+    import numpy as np
+
+    from vector_recsys_lite.algo import compute_rmse
+
+    a = np.zeros((2, 2))
+    b = np.zeros((3, 2))
+    import pytest
+
+    with pytest.raises(ValueError, match="must have the same shape"):
+        compute_rmse(a, b)
+
+
+def test_compute_rmse_nan_inf():
+    import numpy as np
+
+    from vector_recsys_lite.algo import compute_rmse
+
+    a = np.array([[1.0, float("nan")]])
+    b = np.array([[1.0, 2.0]])
+    import pytest
+
+    with pytest.raises(ValueError, match="NaN"):
+        compute_rmse(a, b)
+    a = np.array([[1.0, float("inf")]])
+    with pytest.raises(ValueError, match="infinite"):
+        compute_rmse(a, b)
+
+
+def test_compute_rmse_empty_mask():
+    import numpy as np
+
+    from vector_recsys_lite.algo import compute_rmse
+
+    a = np.zeros((2, 2))
+    b = np.zeros((2, 2))
+    assert compute_rmse(a, b) == 0.0
+
+
+def test_compute_mae_shape_mismatch():
+    import numpy as np
+
+    from vector_recsys_lite.algo import compute_mae
+
+    a = np.zeros((2, 2))
+    b = np.zeros((3, 2))
+    import pytest
+
+    with pytest.raises(ValueError, match="must have the same shape"):
+        compute_mae(a, b)
+
+
+def test_compute_mae_nan_inf():
+    import numpy as np
+
+    from vector_recsys_lite.algo import compute_mae
+
+    a = np.array([[1.0, float("nan")]])
+    b = np.array([[1.0, 2.0]])
+    import pytest
+
+    with pytest.raises(ValueError, match="NaN"):
+        compute_mae(a, b)
+    a = np.array([[1.0, float("inf")]])
+    with pytest.raises(ValueError, match="infinite"):
+        compute_mae(a, b)
+
+
+def test_compute_mae_empty_mask():
+    import numpy as np
+
+    from vector_recsys_lite.algo import compute_mae
+
+    a = np.zeros((2, 2))
+    b = np.zeros((2, 2))
+    assert compute_mae(a, b) == 0.0
+
+
+def test_benchmark_algorithm_unknown():
+    import numpy as np
+
+    a = np.zeros((2, 2))
+    import pytest
+
+    with pytest.raises(ValueError, match="Unknown algorithm"):
+        benchmark_algorithm("not_a_real_algo", a)

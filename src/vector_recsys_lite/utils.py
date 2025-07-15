@@ -1,6 +1,7 @@
-import numpy as np
-from scipy.sparse import issparse
 from typing import Any
+
+from scipy.sparse import issparse
+
 
 def as_dense(matrix: Any) -> Any:
     """
@@ -14,4 +15,5 @@ def as_dense(matrix: Any) -> Any:
         return matrix.toarray()
     return matrix
 
-__all__ = ["as_dense"] 
+
+__all__ = ["as_dense"]

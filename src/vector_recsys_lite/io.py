@@ -18,6 +18,7 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from scipy import sparse
 from scipy.sparse import csr_matrix
+
 from .utils import as_dense
 
 # Type aliases
@@ -114,7 +115,9 @@ class DataLoader:
         path = Path(path)
 
         if not path.exists():
-            raise FileNotFoundError(f"File not found: {path}. Please check the file path and try again.")
+            raise FileNotFoundError(
+                f"File not found: {path}. Please check the file path and try again."
+            )
 
         try:
             # Try pandas first for better performance and missing value handling
@@ -131,6 +134,7 @@ class DataLoader:
         except Exception:
             # Fallback to manual CSV parsing for more control
             rows = []
+            expected_len = None
             with open(path, encoding="utf-8") as f:
                 for row_num, line in enumerate(f):
                     row = line.strip().split(delimiter)
@@ -148,6 +152,12 @@ class DataLoader:
                                 raise ValueError(
                                     f"Invalid value at row {row_num + 1}, col {col_num + 1}: {cell}"
                                 ) from None
+                    if expected_len is None:
+                        expected_len = len(float_row)
+                    elif len(float_row) != expected_len:
+                        raise ValueError(
+                            f"CSV file '{path}' has inconsistent row lengths at row {row_num + 1}."
+                        )
                     rows.append(float_row)
             if not rows:
                 raise ValueError(f"CSV file '{path}' must contain a 2D matrix.")
@@ -156,7 +166,9 @@ class DataLoader:
                 matrix = matrix.reshape(1, -1)
 
         if matrix.ndim != 2:
-            raise ValueError(f"CSV file '{path}' must contain a 2D matrix. Got shape {matrix.shape}.")
+            raise ValueError(
+                f"CSV file '{path}' must contain a 2D matrix. Got shape {matrix.shape}."
+            )
 
         if sparse_format:
             from scipy import sparse
@@ -169,7 +181,7 @@ class DataLoader:
     ) -> np.ndarray:
         """Manual CSV loading for complex formats."""
         rows = []
-
+        expected_len = None
         with open(path, encoding="utf-8") as f:
             reader = csv.reader(f, delimiter=delimiter)
 
@@ -190,19 +202,20 @@ class DataLoader:
                             raise ValueError(
                                 f"Invalid value at row {row_num + 1}, col {col_num + 1}: {cell}"
                             ) from e
-
+                if expected_len is None:
+                    expected_len = len(float_row)
+                elif len(float_row) != expected_len:
+                    raise ValueError(
+                        f"CSV file '{path}' has inconsistent row lengths at row {row_num + 1}."
+                    )
                 rows.append(float_row)
-
         if not rows:
             raise ValueError(f"CSV file '{path}' is empty or contains no valid data.")
-
         # Convert to numpy array
         matrix = np.array(rows, dtype=np.float32)
-
         # Ensure all rows have the same number of columns
         if matrix.ndim == 1:
             matrix = matrix.reshape(1, -1)
-
         return matrix
 
     def _load_json(self, path: Union[str, Path], **kwargs: Any) -> FloatMatrix:
@@ -265,7 +278,9 @@ class DataLoader:
             raise ValueError(f"Failed to load HDF5 file: {e}") from e
 
         if matrix.ndim != 2:
-            raise ValueError(f"HDF5 file '{path}' must contain a 2D matrix. Got shape {matrix.shape}.")
+            raise ValueError(
+                f"HDF5 file '{path}' must contain a 2D matrix. Got shape {matrix.shape}."
+            )
 
         return matrix
 
@@ -738,6 +753,7 @@ def create_sample_ratings(
         return sparse.csr_matrix(matrix)
     else:
         return matrix
+
 
 __all__ = [
     "load_ratings",

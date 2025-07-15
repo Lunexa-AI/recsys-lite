@@ -1,11 +1,21 @@
 """Tests for the IO module."""
 
+import json
 import tempfile
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import pytest
-from vector_recsys_lite.io import create_sample_ratings, load_ratings, save_ratings
+from scipy import sparse
+
+from vector_recsys_lite.io import (
+    DataLoader,
+    _validate_identifier,
+    create_sample_ratings,
+    load_ratings,
+    save_ratings,
+)
 from vector_recsys_lite.utils import as_dense
 
 
@@ -86,7 +96,9 @@ class TestLoadRatings:
             temp_path = f.name
 
         try:
-            with pytest.raises(ValueError, match="CSV must contain a 2D matrix"):
+            with pytest.raises(
+                ValueError, match=r"CSV file .+ must contain a 2D matrix"
+            ):
                 load_ratings(temp_path)
         finally:
             Path(temp_path).unlink()
@@ -318,8 +330,6 @@ class TestIntegration:
         try:
             matrix = load_ratings(temp_path, sparse_format=True)
 
-            from scipy import sparse
-
             assert sparse.issparse(matrix)
             assert matrix.shape == (2, 4)
         finally:
@@ -327,8 +337,6 @@ class TestIntegration:
 
     def test_save_ratings_sparse_matrix(self) -> None:
         """Test saving sparse matrix."""
-        from scipy import sparse
-
         matrix = sparse.csr_matrix(
             np.array([[5, 3, 0, 1], [0, 0, 4, 5]], dtype=np.float32)
         )
@@ -347,8 +355,6 @@ class TestIntegration:
 
     def test_load_ratings_json_format(self) -> None:
         """Test loading JSON format."""
-        import json
-
         matrix_data = {
             "matrix": [[5.0, 3.0, 0.0, 1.0], [0.0, 0.0, 4.0, 5.0]],
             "shape": [2, 4],
@@ -389,8 +395,6 @@ class TestIntegration:
     def test_load_ratings_parquet_format(self) -> None:
         """Test loading Parquet format."""
         try:
-            import pandas as pd
-
             matrix = np.array(
                 [[5.0, 3.0, 0.0, 1.0], [0.0, 0.0, 4.0, 5.0]], dtype=np.float32
             )
@@ -443,8 +447,6 @@ class TestIntegration:
             temp_path = f.name
 
         try:
-            from scipy import sparse
-
             sparse.save_npz(temp_path, sparse.csr_matrix(matrix))
 
             loaded = load_ratings(temp_path)
@@ -457,8 +459,6 @@ class TestIntegration:
 
     def test_save_ratings_npz_format(self) -> None:
         """Test saving NPZ format."""
-        from scipy import sparse
-
         matrix = sparse.csr_matrix(
             np.array([[5.0, 3.0, 0.0, 1.0], [0.0, 0.0, 4.0, 5.0]], dtype=np.float32)
         )
@@ -505,8 +505,6 @@ class TestIntegration:
         matrix = create_sample_ratings(
             n_users=10, n_items=5, sparsity=0.8, sparse_format=True
         )
-
-        from scipy import sparse
 
         assert sparse.issparse(matrix)
         assert matrix.shape == (10, 5)
@@ -638,3 +636,193 @@ class TestIntegration:
                 load_ratings(temp_path)
         finally:
             Path(temp_path).unlink()
+
+
+def test_manual_csv_loader_empty_and_malformed(tmp_path):
+    loader = DataLoader()
+    # Empty file
+    empty_path = tmp_path / "empty.csv"
+    empty_path.write_text("")
+    with pytest.raises(ValueError):
+        loader._load_csv_manual(empty_path, delimiter=",", missing_value=0.0)
+    # Malformed row
+    malformed_path = tmp_path / "malformed.csv"
+    malformed_path.write_text("5,3,0,1\n0,0,4\n1,1,0,0\n")
+    with pytest.raises(Exception):
+        loader._load_csv_manual(malformed_path, delimiter=",", missing_value=0.0)
+
+
+def test_manual_csv_loader_missing_values(tmp_path):
+    loader = DataLoader()
+    path = tmp_path / "missing.csv"
+    path.write_text("5,3,,1\n0,0,4,5\n1,1,0,0\n")
+    matrix = loader._load_csv_manual(path, delimiter=",", missing_value=-1.0)
+    assert matrix.shape == (3, 4)
+    assert matrix[0, 2] == -1.0
+
+
+def test_load_csv_manual_inconsistent_rows(tmp_path):
+    loader = DataLoader()
+    path = tmp_path / "bad.csv"
+    path.write_text("1,2,3\n4,5\n6,7,8\n")
+    with pytest.raises(ValueError, match="inconsistent row lengths"):
+        loader._load_csv_manual(path, delimiter=",", missing_value=0.0)
+
+
+def test_load_csv_manual_empty(tmp_path):
+    loader = DataLoader()
+    path = tmp_path / "empty.csv"
+    path.write_text("")
+    with pytest.raises(ValueError, match="empty or contains no valid data"):
+        loader._load_csv_manual(path, delimiter=",", missing_value=0.0)
+
+
+def test_load_csv_manual_nonfloat(tmp_path):
+    loader = DataLoader()
+    path = tmp_path / "bad.csv"
+    path.write_text("1,2,foo\n4,5,6\n")
+    with pytest.raises(ValueError, match="Invalid value at row 1, col 3"):
+        loader._load_csv_manual(path, delimiter=",", missing_value=0.0)
+
+
+def test_load_ratings_fallback_csv(tmp_path, monkeypatch):
+    # Fallback: CSV with inconsistent rows
+    path = tmp_path / "bad.csv"
+    path.write_text("5,3,0,1\n0,0,4\n1,1,0,0\n")
+    # Force pandas.read_csv to fail so fallback is used
+    import pandas as pd
+
+    monkeypatch.setattr(
+        pd, "read_csv", lambda *a, **k: (_ for _ in ()).throw(Exception("fail"))
+    )
+    with pytest.raises(ValueError):
+        load_ratings(path)
+
+
+def test_load_ratings_malformed_json(tmp_path):
+    path = tmp_path / "bad.json"
+    path.write_text("{not: valid json}")
+    with pytest.raises(Exception):
+        load_ratings(path)
+
+
+def test_load_ratings_unsupported_format(tmp_path):
+    path = tmp_path / "bad.unsupported"
+    path.write_text("irrelevant")
+    with pytest.raises(Exception):
+        load_ratings(path)
+
+
+def test_load_ratings_missing_hdf5(monkeypatch, tmp_path):
+    path = tmp_path / "file.h5"
+    path.write_text("")
+    monkeypatch.setitem(__import__("sys").modules, "h5py", None)
+    with pytest.raises(Exception):
+        load_ratings(path)
+
+
+def test_load_ratings_missing_sqlalchemy(monkeypatch, tmp_path):
+    path = tmp_path / "file.sqlite"
+    path.write_text("")
+    monkeypatch.setitem(__import__("sys").modules, "sqlalchemy", None)
+    with pytest.raises(Exception):
+        load_ratings(path)
+
+
+def test_detect_format_npz_magic(tmp_path):
+    loader = DataLoader()
+    path = tmp_path / "file.unknown"
+    # Write NPZ magic bytes
+    path.write_bytes(b"PK\x03\x04rest")
+    assert loader._detect_format(path) == "npz"
+
+
+def test_detect_format_unknown(tmp_path):
+    loader = DataLoader()
+    path = tmp_path / "file.unknown"
+    path.write_text("irrelevant")
+    assert loader._detect_format(path) == "csv"
+
+
+# test_validate_identifier removed for deployment
+
+
+def test_load_parquet_missing_dependency(monkeypatch, tmp_path):
+    loader = DataLoader()
+    path = tmp_path / "file.parquet"
+    path.write_text("")
+    monkeypatch.setitem(__import__("sys").modules, "pandas", None)
+    with pytest.raises(Exception):
+        loader._load_parquet(path)
+
+
+def test_load_hdf5_missing_dependency(monkeypatch, tmp_path):
+    loader = DataLoader()
+    path = tmp_path / "file.h5"
+    path.write_text("")
+    monkeypatch.setitem(__import__("sys").modules, "h5py", None)
+    with pytest.raises(Exception):
+        loader._load_hdf5(path)
+
+
+def test_load_sqlite_missing_dependency(monkeypatch, tmp_path):
+    loader = DataLoader()
+    path = tmp_path / "file.sqlite"
+    path.write_text("")
+    monkeypatch.setitem(__import__("sys").modules, "sqlalchemy", None)
+    with pytest.raises(Exception):
+        loader._load_sqlite(path)
+
+
+def test_save_ratings_unsupported_format(tmp_path):
+    import numpy as np
+
+    path = tmp_path / "file.unsupported"
+    with pytest.raises(ValueError):
+        save_ratings(np.zeros((2, 2)), path, format="unsupported")
+
+
+def test_loader_unsupported_format(tmp_path):
+    loader = DataLoader()
+    path = tmp_path / "file.unsupported"
+    path.write_text("")
+    with pytest.raises(ValueError, match="Unsupported format"):
+        loader.load(path, format="unsupported")
+
+
+def test_loader_missing_hdf5(monkeypatch, tmp_path):
+    loader = DataLoader()
+    path = tmp_path / "file.h5"
+    path.write_text("")
+    monkeypatch.setitem(__import__("sys").modules, "h5py", None)
+    with pytest.raises(ImportError):
+        loader._load_hdf5(path)
+
+
+def test_loader_missing_sqlalchemy(monkeypatch, tmp_path):
+    loader = DataLoader()
+    path = tmp_path / "file.sqlite"
+    path.write_text("")
+    monkeypatch.setitem(__import__("sys").modules, "sqlalchemy", None)
+    with pytest.raises(ImportError):
+        loader._load_sqlite(path)
+
+
+def test_loader_missing_pyarrow(monkeypatch, tmp_path):
+    loader = DataLoader()
+    path = tmp_path / "file.parquet"
+    path.write_text("")
+    monkeypatch.setitem(__import__("sys").modules, "pyarrow", None)
+    with pytest.raises(Exception):
+        loader._load_parquet(path)
+
+
+def test_validate_identifier_invalid():
+    import pytest
+
+    with pytest.raises(ValueError):
+        _validate_identifier("bad-name!")
+    with pytest.raises(ValueError):
+        _validate_identifier("with space")
+    with pytest.raises(ValueError):
+        _validate_identifier("!@#")
