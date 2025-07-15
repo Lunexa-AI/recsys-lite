@@ -12,4 +12,6 @@ def as_dense(matrix: Any) -> Any:
     """
     if issparse is not None and issparse(matrix):
         return matrix.toarray()
-    return matrix 
+    return matrix
+
+__all__ = ["as_dense"] 

@@ -41,6 +41,10 @@ class RecommenderSystem:
     This class provides a unified interface for collaborative filtering
     using truncated SVD matrix factorization with support for both
     dense and sparse matrices.
+
+    Extensibility:
+    - You can subclass RecommenderSystem to implement custom algorithms or add hooks.
+    - Override fit, predict, or recommend as needed.
     """
 
     def __init__(
@@ -68,7 +72,7 @@ class RecommenderSystem:
         self._fitted = False
 
         if algorithm not in ["svd"]:
-            raise ValueError(f"Unsupported algorithm: {algorithm}")
+            raise ValueError(f"Unsupported algorithm: '{algorithm}'. Supported: ['svd'].")
 
     def is_fitted(self) -> bool:
         """Check if the model has been fitted."""
@@ -116,11 +120,11 @@ class RecommenderSystem:
             Predicted ratings matrix.
         """
         if not self._fitted:
-            raise RuntimeError("Model must be fitted before making predictions")
+            raise RuntimeError("Model must be fitted before making predictions. Call .fit() first.")
 
         if self.algorithm == "svd":
             if self._model is None:
-                raise RuntimeError("Model not fitted")
+                raise RuntimeError("Model not fitted. Call .fit() first.")
             return self._predict_svd(ratings)
         else:
             raise ValueError(f"Unsupported algorithm: {self.algorithm}")
@@ -146,7 +150,7 @@ class RecommenderSystem:
             Array of shape (n_users, n) containing item indices.
         """
         if n <= 0:
-            raise ValueError("n must be positive")
+            raise ValueError(f"n must be positive. Got n={n}.")
 
         predictions = self.predict(ratings)
 
@@ -299,11 +303,11 @@ def svd_reconstruct(
     >>> sparse_reconstructed = svd_reconstruct(sparse_ratings, k=2)
     """
     if mat.ndim != 2:
-        raise ValueError(f"Matrix must be 2D, got {mat.ndim}D")
+        raise ValueError(f"Input matrix must be 2D (users x items), got {mat.ndim}D.")
 
     n_users, n_items = mat.shape
     if n_users == 0 or n_items == 0:
-        raise ValueError("Matrix cannot have zero dimensions")
+        raise ValueError("Input matrix cannot have zero dimensions.")
 
     # Auto-determine k if not provided
     k = max(1, min(n_users, n_items) // 4) if k is None else k
@@ -311,7 +315,7 @@ def svd_reconstruct(
     if not 1 <= k <= min(n_users, n_items):
         raise ValueError(
             f"k must be between 1 and min(n_users, n_items)={min(n_users, n_items)}, "
-            f"got {k}"
+            f"got k={k}."
         )
 
     try:
@@ -335,7 +339,7 @@ def svd_reconstruct(
             return reconstructed
 
     except np.linalg.LinAlgError as e:
-        raise RuntimeError(f"SVD computation failed: {e}") from e
+        raise RuntimeError(f"SVD computation failed: {e}. Check if your matrix is well-conditioned and k is appropriate.") from e
 
 
 @jit(cache=True, fastmath=True)  # type: ignore[misc]
@@ -405,13 +409,13 @@ def top_n(est: FloatMatrix, known: FloatMatrix, *, n: int = 10) -> np.ndarray:
         Array of shape (n_users, n_actual) containing item indices, where n_actual <= n.
     """
     if n <= 0:
-        raise ValueError("n must be positive")
+        raise ValueError(f"n must be positive. Got n={n}.")
 
     est_dense = as_dense(est)
     known_dense = as_dense(known)
 
     if est_dense.shape != known_dense.shape:
-        raise ValueError("Matrices must have same shape")
+        raise ValueError(f"Estimated and known matrices must have the same shape. Got {est_dense.shape} and {known_dense.shape}.")
 
     n_users, n_items = est_dense.shape
     if n_users == 0 or n_items == 0:
@@ -460,7 +464,7 @@ def compute_rmse(predictions: FloatMatrix, actual: FloatMatrix) -> float:
         RMSE value.
     """
     if predictions.shape != actual.shape:
-        raise ValueError("Matrices must have same shape")
+        raise ValueError(f"Predictions and actual matrices must have the same shape. Got {predictions.shape} and {actual.shape}.")
 
     # Convert to dense for computation
     predictions_dense = as_dense(predictions)
@@ -468,11 +472,11 @@ def compute_rmse(predictions: FloatMatrix, actual: FloatMatrix) -> float:
 
     # Check for infinite values
     if np.any(np.isinf(predictions_dense)) or np.any(np.isinf(actual_dense)):
-        raise ValueError("Matrix contains infinite values")
+        raise ValueError("Input matrices must not contain infinite values.")
 
     # Check for NaN values
     if np.any(np.isnan(predictions_dense)) or np.any(np.isnan(actual_dense)):
-        raise ValueError("Matrix contains NaN values")
+        raise ValueError("Input matrices must not contain NaN values.")
 
     # Only consider non-zero (rated) items
     mask = actual_dense > 0
@@ -500,7 +504,7 @@ def compute_mae(predictions: FloatMatrix, actual: FloatMatrix) -> float:
         MAE value.
     """
     if predictions.shape != actual.shape:
-        raise ValueError("Matrices must have same shape")
+        raise ValueError(f"Predictions and actual matrices must have the same shape. Got {predictions.shape} and {actual.shape}.")
 
     # Convert to dense for computation
     predictions_dense = as_dense(predictions)
@@ -508,11 +512,11 @@ def compute_mae(predictions: FloatMatrix, actual: FloatMatrix) -> float:
 
     # Check for infinite values
     if np.any(np.isinf(predictions_dense)) or np.any(np.isinf(actual_dense)):
-        raise ValueError("Matrix contains infinite values")
+        raise ValueError("Input matrices must not contain infinite values.")
 
     # Check for NaN values
     if np.any(np.isnan(predictions_dense)) or np.any(np.isnan(actual_dense)):
-        raise ValueError("Matrix contains NaN values")
+        raise ValueError("Input matrices must not contain NaN values.")
 
     # Only consider non-zero (rated) items
     mask = actual_dense > 0
@@ -605,3 +609,12 @@ def benchmark_algorithm(
     )
 
     return results
+
+__all__ = [
+    "RecommenderSystem",
+    "svd_reconstruct",
+    "top_n",
+    "compute_rmse",
+    "compute_mae",
+    "benchmark_algorithm",
+]

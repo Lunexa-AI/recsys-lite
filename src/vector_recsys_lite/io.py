@@ -114,7 +114,7 @@ class DataLoader:
         path = Path(path)
 
         if not path.exists():
-            raise FileNotFoundError(f"File not found: {path}")
+            raise FileNotFoundError(f"File not found: {path}. Please check the file path and try again.")
 
         try:
             # Try pandas first for better performance and missing value handling
@@ -150,13 +150,13 @@ class DataLoader:
                                 ) from None
                     rows.append(float_row)
             if not rows:
-                raise ValueError("CSV must contain a 2D matrix") from None
+                raise ValueError(f"CSV file '{path}' must contain a 2D matrix.")
             matrix = np.array(rows, dtype=np.float32)
             if matrix.ndim == 1:
                 matrix = matrix.reshape(1, -1)
 
         if matrix.ndim != 2:
-            raise ValueError("CSV must contain a 2D matrix")
+            raise ValueError(f"CSV file '{path}' must contain a 2D matrix. Got shape {matrix.shape}.")
 
         if sparse_format:
             from scipy import sparse
@@ -194,7 +194,7 @@ class DataLoader:
                 rows.append(float_row)
 
         if not rows:
-            raise ValueError("CSV file is empty or contains no valid data")
+            raise ValueError(f"CSV file '{path}' is empty or contains no valid data.")
 
         # Convert to numpy array
         matrix = np.array(rows, dtype=np.float32)
@@ -265,7 +265,7 @@ class DataLoader:
             raise ValueError(f"Failed to load HDF5 file: {e}") from e
 
         if matrix.ndim != 2:
-            raise ValueError("HDF5 must contain a 2D matrix")
+            raise ValueError(f"HDF5 file '{path}' must contain a 2D matrix. Got shape {matrix.shape}.")
 
         return matrix
 
@@ -517,7 +517,7 @@ def _load_csv(path: Path, **kwargs: Any) -> FloatMatrix:
         matrix = np.where(matrix == missing_value, 0.0, matrix)
         return matrix
     except Exception as e:
-        raise ValueError(f"Failed to load CSV: {e}") from e
+        raise ValueError(f"Failed to load CSV file '{path}': {e}") from e
 
 
 def _load_json(path: Path, **kwargs: Any) -> FloatMatrix:
@@ -738,3 +738,9 @@ def create_sample_ratings(
         return sparse.csr_matrix(matrix)
     else:
         return matrix
+
+__all__ = [
+    "load_ratings",
+    "save_ratings",
+    "create_sample_ratings",
+]
