@@ -13,6 +13,15 @@ __version__ = "0.1.4"
 from .algo import RecommenderSystem, compute_mae, compute_rmse, svd_reconstruct, top_n
 from .explain import visualize_svd
 from .io import create_sample_ratings, load_ratings, save_ratings
+from .tools import (
+    RecsysPipeline,
+    grid_search_k,
+    load_toy_dataset,
+    ndcg_at_k,
+    precision_at_k,
+    recall_at_k,
+    train_test_split_ratings,
+)
 
 __all__ = [
     "__version__",
@@ -25,4 +34,11 @@ __all__ = [
     "create_sample_ratings",
     "RecommenderSystem",
     "visualize_svd",
+    "load_toy_dataset",
+    "precision_at_k",
+    "recall_at_k",
+    "ndcg_at_k",
+    "train_test_split_ratings",
+    "RecsysPipeline",
+    "grid_search_k",
 ]
