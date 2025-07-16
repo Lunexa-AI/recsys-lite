@@ -47,6 +47,9 @@ def predict(
     max_users: int = typer.Option(
         5, "--max-users", help="Maximum number of users to show recommendations for"
     ),
+    explain: bool = typer.Option(
+        False, "--explain", "-e", help="Explain SVD steps for educational purposes"
+    ),
 ) -> None:
     """
     Generate top-N recommendations for users.
@@ -77,11 +80,22 @@ def predict(
                 description=f"Loaded {ratings.shape[0]} users, {ratings.shape[1]} items",
             )
 
+            if explain:
+                console.print(
+                    "[bold]Step 1: Input Matrix Sample (first 5 users x 5 items)[/]"
+                )
+                console.print(str(as_dense(ratings)[:5, :5]))
+
             # Compute SVD reconstruction
             progress.update(task, description="Computing SVD reconstruction...")
             reconstructed = svd_reconstruct(ratings, k=k)
             # Ensure dense for downstream metrics and recommendations
             reconstructed = as_dense(reconstructed)
+
+            if explain:
+                from .explain import visualize_svd
+
+                visualize_svd(ratings, k)  # Assuming visualize_svd handles the printing
 
             # Generate recommendations
             progress.update(task, description="Generating recommendations...")
@@ -137,16 +151,28 @@ def predict(
 
 
 def bench(csv: Path, k: int = 50, n: int = 10, iterations: int = 1) -> None:
-    """Minimal bench function for CLI benchmarking."""
+    try:
+        import psutil
+
+        has_psutil = True
+    except ImportError:
+        has_psutil = False
     for i in range(iterations):
         console.print(f"\n[dim]Iteration {i + 1}/{iterations}[/]")
+        if has_psutil:
+            start_mem = psutil.Process().memory_info().rss / 1024 / 1024
+            start_cpu = psutil.cpu_percent()
         ratings = load_ratings(csv)
         result = quick_benchmark(ratings, k=k, n_runs=1)
-
+        if has_psutil:
+            end_mem = psutil.Process().memory_info().rss / 1024 / 1024
+            end_cpu = psutil.cpu_percent()
+            console.print(
+                f"CPU: {end_cpu - start_cpu}% | RAM used: {end_mem - start_mem:.2f} MB"
+            )
         if result is None:
             console.print(f"[red]Benchmark failed for k={k}[/]")
             continue
-
         console.print(
             f"[green]Time:[/] {result['time']:.4f}s | [cyan]RMSE:[/] {result['rmse']:.4f} | [magenta]MAE:[/] {result['mae']:.4f}"
         )
@@ -273,6 +299,38 @@ def evaluate(
     """Evaluate predictions (stub)."""
     console.print(f"[bold cyan]Evaluate:[/] {actual_file} vs {pred_file}")
     sys.exit(0)
+
+
+@cli.command()
+def deploy(
+    model: Path = typer.Argument(..., exists=True, help="Path to saved model file"),
+    port: int = typer.Option(8000, "--port", "-p", help="Port for the API server"),
+) -> None:
+    """
+    Generate a ready-to-run FastAPI deployment script.
+    """
+
+    script = f"""
+from fastapi import FastAPI
+import numpy as np
+from vector_recsys_lite import RecommenderSystem
+
+app = FastAPI()
+rec = RecommenderSystem.load('{model}')
+
+@app.get('/recommend/{{user_id}}')
+def recommend(user_id: int, n: int = 5):
+    # Dummy ratings for demo; replace with real logic
+    ratings = np.zeros((1, 10))  # Adjust shape
+    recs = rec.recommend(ratings, n=n)[0]
+    return {{'recommendations': recs.tolist()}}
+"""
+    output_file = "deploy_app.py"
+    with open(output_file, "w") as f:
+        f.write(script)
+    console.print(
+        f"[green]Generated {output_file}. Run: uvicorn {output_file}:app --port {port}"
+    )
 
 
 if __name__ == "__main__":

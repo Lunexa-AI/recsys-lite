@@ -36,6 +36,13 @@ cd lunexa-labs/packages/vector_recsys_lite
 poetry install
 ```
 
+#### Offline Installation (for low-network environments)
+To install without internet:
+1. On a machine with internet: `pip download vector_recsys_lite --no-deps`
+2. Transfer the .whl file via USB.
+3. On target machine: `pip install vector_recsys_lite-<version>-py3-none-any.whl`
+This works on old laptops without network.
+
 ### Basic Usage
 
 ```python
