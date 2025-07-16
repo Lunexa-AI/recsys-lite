@@ -1,36 +1,28 @@
-.. vector_recsys_lite documentation master file, created by
-   sphinx-quickstart on Tue Jul 15 18:39:24 2025.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+vector-recsys-lite Documentation
+===========================
 
-Welcome to vector_recsys_lite's documentation!
-==============================================
+Welcome to the official documentation.
 
 .. toctree::
-   :maxdepth=2
-   :caption: Contents:
+   :maxdepth: 2
+   :caption: User Guides
 
+   educator_guide
+   deployment_guide
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Developer Guides
+
+   developer_guide
    api
 
-Installation and Local Build Instructions
-========================================
+.. toctree::
+   :maxdepth: 1
+   :caption: Additional Resources
 
-To build the documentation locally:
-
-.. code-block:: bash
-
-   cd docs
-   make html
-
-The generated HTML will be in docs/build/html/index.html
-
-API Reference
-=============
-
-.. automodule:: vector_recsys_lite
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   contributing
+   changelog
 
 Indices and tables
 ==================
