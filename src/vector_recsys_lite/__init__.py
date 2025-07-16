@@ -8,7 +8,15 @@ Features:
 - Handles large, sparse datasets (100k x 10k+)
 """
 
-__version__ = "0.1.4"
+try:
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        __version__ = version("vector_recsys_lite")
+    except PackageNotFoundError:
+        __version__ = "unknown"
+except ImportError:
+    __version__ = "unknown"
 
 from .algo import RecommenderSystem, compute_mae, compute_rmse, svd_reconstruct, top_n
 from .explain import visualize_svd

@@ -25,6 +25,16 @@ Designed for educators in resource-constrained environments and developers build
 
 See [Use Cases](#📚-use-cases).
 
+## ❓ Why This Over a Script?
+
+- **Purpose-built for teaching and learning**: Includes interactive CLI, educator guides, and Jupyter demos—no need to reinvent the wheel for every class or workshop.
+- **Robust, tested, and production-ready**: Handles edge cases, bad input, and large/sparse data gracefully—unlike most one-off scripts.
+- **Offline and lightweight**: Designed for environments with unreliable internet and old hardware; install once, use anywhere.
+- **Extensible and maintainable**: Clean API, modular design, and strong test coverage make it easy to extend or adapt for new use cases.
+- **Community and support**: Contributor guides, issue templates, and a focus on educational impact—join others building for real-world constraints.
+
+---
+
 ## 🚀 Getting Started
 
 ### Installation

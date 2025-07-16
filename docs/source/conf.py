@@ -8,6 +8,16 @@
 import os
 import sys
 
+# Workaround for Sphinx epub3 builder on Python 3.13+ (imghdr removed)
+if sys.version_info >= (3, 13):
+    try:
+        import sphinx.builders
+
+        if hasattr(sphinx.builders, "epub3"):
+            del sphinx.builders.epub3
+    except Exception:
+        pass
+
 sys.path.insert(0, os.path.abspath("../../src"))
 
 
@@ -49,3 +59,6 @@ exclude_patterns = []
 
 html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
+
+# -- Disable epub output (Python 3.13+ imghdr removal workaround) -------------
+epub_build = False

@@ -42,7 +42,9 @@ def visualize_svd(
             plt.tight_layout()
             plt.show()
         except ImportError:
-            print("matplotlib not installed; skipping plot.")
+            raise ImportError(
+                "matplotlib is required for plotting. Please install it with 'pip install matplotlib'."
+            )
 
 
 def ascii_heatmap(
@@ -66,4 +68,6 @@ def ascii_heatmap(
             plt.colorbar()
             plt.show()
         except ImportError:
-            print("matplotlib not installed; skipping plot.")
+            raise ImportError(
+                "matplotlib is required for plotting. Please install it with 'pip install matplotlib'."
+            )

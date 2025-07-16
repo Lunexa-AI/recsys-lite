@@ -2,6 +2,16 @@
 
 Thanks for your interest! We welcome contributions that improve education or usability.
 
+## Good First Issues
+
+- **Add a new toy dataset**: Create a small, interesting dataset for demos or tests (e.g., books, music, local products).
+- **Improve educator guides**: Add examples, clarify concepts, or translate docs.
+- **Add edge-case tests**: Help us reach 90%+ coverage by testing rare or tricky scenarios.
+- **CLI polish**: Improve help messages, error handling, or add new CLI options.
+- **Docs and templates**: Refine README, CONTRIBUTING, or GitHub issue/PR templates.
+
+See [issues](https://github.com/Lunexa-AI/vector-recsys-lite/issues) for more ideas!
+
 ## Reporting Issues
 
 1. Check existing issues

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vector_recsys_lite"
-version = "0.1.4"
+version = "0.1.5"
 description = "🔥 Zero-dep NumPy SVD recommender + ANN benchmark (2 s on 100 k MovieLens)"
 authors = ["Simbarashe Timire <stimire92@gmail.com>"]
 license = "MIT"
