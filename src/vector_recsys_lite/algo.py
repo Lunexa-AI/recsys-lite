@@ -5,7 +5,7 @@ This module provides fast SVD-based matrix factorization algorithms
 for collaborative filtering recommender systems.
 """
 
-from typing import Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import joblib  # type: ignore[import-untyped]
 import numpy as np
@@ -68,13 +68,11 @@ class RecommenderSystem:
         self.algorithm = algorithm
         self.random_state = random_state
         self.use_sparse = use_sparse
-        self._model: Optional[dict[str, Any]] = None
+        self._model: Optional[Dict[str, Any]] = None
         self._fitted = False
 
-        if algorithm not in ["svd"]:
-            raise ValueError(
-                f"Unsupported algorithm: '{algorithm}'. Supported: ['svd']."
-            )
+        if algorithm not in ["svd", "als", "knn"]:
+            raise ValueError(f"Unsupported: {algorithm}")
 
     def is_fitted(self) -> bool:
         """Check if the model has been fitted."""
@@ -101,6 +99,10 @@ class RecommenderSystem:
                 self._model = self._fit_svd_sparse(ratings, k)
             else:
                 self._model = self._fit_svd_dense(ratings, k)
+        elif self.algorithm == "als":
+            self._model = self._fit_als(ratings, k or 10)
+        elif self.algorithm == "knn":
+            self._model = self._fit_knn(ratings, k or 10)
         else:
             raise ValueError(f"Unsupported algorithm: {self.algorithm}")
 
@@ -130,6 +132,28 @@ class RecommenderSystem:
             if self._model is None:
                 raise RuntimeError("Model not fitted. Call .fit() first.")
             return self._predict_svd(ratings)
+        elif self.algorithm == "als":
+            model = self._model
+            if model is None:
+                raise RuntimeError("Model not fitted. Call .fit() first.")
+            return model["user_factors"] @ model["item_factors"].T
+        elif self.algorithm == "knn":
+            model = self._model
+            if model is None:
+                raise RuntimeError("Model not fitted. Call .fit() first.")
+            preds = np.zeros_like(ratings, dtype=float)
+            for u in range(ratings.shape[0]):
+                for i in range(ratings.shape[1]):
+                    if ratings[u, i] == 0:
+                        sim_scores = model["item_sim"][i]
+                        top_neighbors = np.argsort(sim_scores)[-model["neighbors"] :]
+                        weights = sim_scores[top_neighbors]
+                        rated = ratings[u, top_neighbors] > 0
+                        if np.sum(rated) > 0:
+                            preds[u, i] = np.dot(
+                                weights[rated], ratings[u, top_neighbors[rated]]
+                            ) / np.sum(weights[rated])
+            return preds
         else:
             raise ValueError(f"Unsupported algorithm: {self.algorithm}")
 
@@ -171,29 +195,139 @@ class RecommenderSystem:
             result = np.argsort(predictions, axis=1)[:, -n:][:, ::-1]
             return result
 
-    def _fit_svd_dense(self, ratings: np.ndarray, k: Optional[int]) -> dict[str, Any]:
+    def _fit_svd_dense(self, ratings: np.ndarray, k: Optional[int]) -> Dict[str, Any]:
         """Fit SVD model for dense matrices."""
         n_users, n_items = ratings.shape
 
         if k is None:
             k = max(1, min(n_users, n_items) // 4)
 
+        # Compute biases
+        global_bias = np.mean(ratings[ratings > 0])
+        user_bias = np.array(
+            [
+                np.mean(r[r > 0]) - global_bias if np.sum(r > 0) > 0 else 0
+                for r in ratings
+            ]
+        )
+        item_bias = np.array(
+            [
+                np.mean(ratings[:, i][ratings[:, i] > 0]) - global_bias
+                if np.sum(ratings[:, i] > 0) > 0
+                else 0
+                for i in range(n_items)
+            ]
+        )
+        centered = ratings - global_bias - user_bias[:, np.newaxis] - item_bias
+
         # Compute SVD
-        u, s, vt = np.linalg.svd(ratings.astype(np.float32), full_matrices=False)
+        u, s, vt = np.linalg.svd(centered.astype(np.float32), full_matrices=False)
 
-        return {"u": u[:, :k], "s": s[:k], "vt": vt[:k, :], "k": k}
+        return {
+            "u": u[:, :k],
+            "s": s[:k],
+            "vt": vt[:k, :],
+            "k": k,
+            "global_bias": global_bias,
+            "user_bias": user_bias,
+            "item_bias": item_bias,
+        }
 
-    def _fit_svd_sparse(self, ratings: csr_matrix, k: Optional[int]) -> dict[str, Any]:
+    def _fit_svd_sparse(self, ratings: csr_matrix, k: Optional[int]) -> Dict[str, Any]:
         """Fit SVD model for sparse matrices."""
         n_users, n_items = ratings.shape
 
         if k is None:
             k = max(1, min(n_users, n_items) // 4)
 
-        # Use scipy's svds for sparse matrices
-        u, s, vt = svds(ratings.astype(np.float32), k=k, random_state=self.random_state)
+        # Compute biases
+        global_bias = np.mean(ratings.data[ratings.data > 0])
+        user_bias = np.array(
+            [
+                np.mean(
+                    ratings.data[ratings.row == u][ratings.data[ratings.row == u] > 0]
+                )
+                - global_bias
+                for u in range(n_users)
+            ]
+        )
+        item_bias = np.array(
+            [
+                np.mean(
+                    ratings.data[ratings.col == i][ratings.data[ratings.col == i] > 0]
+                )
+                - global_bias
+                for i in range(n_items)
+            ]
+        )
+        centered = ratings.data - global_bias - user_bias[:, np.newaxis] - item_bias
 
-        return {"u": u, "s": s, "vt": vt, "k": k}
+        # Use scipy's svds for sparse matrices
+        u, s, vt = svds(
+            centered.astype(np.float32), k=k, random_state=self.random_state
+        )
+
+        return {
+            "u": u,
+            "s": s,
+            "vt": vt,
+            "k": k,
+            "global_bias": global_bias,
+            "user_bias": user_bias,
+            "item_bias": item_bias,
+        }
+
+    def _fit_als(
+        self,
+        ratings: np.ndarray,
+        factors: int,
+        iterations: int = 10,
+        lambda_: float = 0.01,
+    ) -> Dict:
+        """Basic ALS for implicit feedback. Assumes binary (0/1) ratings."""
+        n_users, n_items = ratings.shape
+        user_factors = np.random.rand(n_users, factors)
+        item_factors = np.random.rand(n_items, factors)
+        ratings = (ratings > 0).astype(np.float32)  # Binary implicit
+        for _ in range(iterations):
+            # Update user factors
+            for u in range(n_users):
+                rated = ratings[u] > 0
+                if np.sum(rated) == 0:
+                    continue
+                item_f = item_factors[rated]
+                user_factors[u] = np.linalg.solve(
+                    item_f.T @ item_f + lambda_ * np.eye(factors),
+                    item_f.T @ ratings[u, rated],
+                )
+            # Update item factors (similar)
+            for i in range(n_items):
+                rated = ratings[:, i] > 0
+                if np.sum(rated) == 0:
+                    continue
+                user_f = user_factors[rated]
+                item_factors[i] = np.linalg.solve(
+                    user_f.T @ user_f + lambda_ * np.eye(factors),
+                    user_f.T @ ratings[rated, i],
+                )
+        return {
+            "user_factors": user_factors,
+            "item_factors": item_factors,
+            "factors": factors,
+        }
+
+    def _fit_knn(self, ratings: np.ndarray, neighbors: int) -> Dict:
+        """Simple KNN on item similarities."""
+        from scipy.spatial.distance import cosine
+
+        item_sim = np.zeros((ratings.shape[1], ratings.shape[1]))
+        for i in range(ratings.shape[1]):
+            for j in range(i + 1, ratings.shape[1]):
+                mask = (ratings[:, i] > 0) & (ratings[:, j] > 0)
+                if np.sum(mask) > 0:
+                    sim = 1 - cosine(ratings[mask, i], ratings[mask, j])
+                    item_sim[i, j] = item_sim[j, i] = sim
+        return {"item_sim": item_sim, "neighbors": neighbors, "ratings": ratings}
 
     def _predict_svd(self, ratings: FloatMatrix) -> FloatMatrix:
         """Generate SVD predictions."""
@@ -206,7 +340,12 @@ class RecommenderSystem:
         vt = model["vt"]
 
         # Reconstruct the matrix
-        reconstructed = u @ (s[:, np.newaxis] * vt)
+        reconstructed = (
+            u @ (s[:, np.newaxis] * vt)
+            + model["global_bias"]
+            + model["user_bias"][:, np.newaxis]
+            + model["item_bias"]
+        )
 
         if self.use_sparse and not issparse(reconstructed):
             return csr_matrix(reconstructed)
@@ -256,6 +395,7 @@ def svd_reconstruct(
     k: Optional[int] = None,
     random_state: Optional[int] = None,
     use_sparse: bool = True,
+    chunk_size: Optional[int] = None,
 ) -> FloatMatrix:
     """
     Truncated SVD reconstruction for collaborative filtering.
@@ -276,6 +416,8 @@ def svd_reconstruct(
         Random seed for reproducible results.
     use_sparse : bool, default=True
         Whether to return sparse matrix for memory efficiency.
+    chunk_size : int, optional
+        If provided, perform chunked SVD reconstruction for large matrices.
 
     Returns
     -------
@@ -323,24 +465,35 @@ def svd_reconstruct(
         )
 
     try:
-        if issparse(mat):
-            # Use scipy's svds for sparse matrices
-            u, s, vt = svds(mat.astype(np.float32), k=k, random_state=random_state)
-        else:
-            # Use numpy's svd for dense matrices
-            u, s, vt = np.linalg.svd(mat.astype(np.float32), full_matrices=False)
-            u, s, vt = u[:, :k], s[:k], vt[:k, :]
-
-        # Reconstruct: U * S * V^T
-        reconstructed = u @ (s[:, np.newaxis] * vt)
-
-        # Convert to sparse if requested
-        if use_sparse and not issparse(reconstructed):
-            return csr_matrix(reconstructed)
-        elif not use_sparse and issparse(reconstructed):
-            return as_dense(reconstructed)
-        else:
+        if chunk_size:
+            # Simple chunking for large matrices
+            n_users = mat.shape[0]
+            reconstructed = np.zeros_like(mat)
+            for start in range(0, n_users, chunk_size):
+                end = min(start + chunk_size, n_users)
+                chunk = mat[start:end]
+                u, s, vt = svds(chunk, k=k)
+                reconstructed[start:end] = u @ (s[:, np.newaxis] * vt)
             return reconstructed
+        else:
+            if issparse(mat):
+                # Use scipy's svds for sparse matrices
+                u, s, vt = svds(mat.astype(np.float32), k=k, random_state=random_state)
+            else:
+                # Use numpy's svd for dense matrices
+                u, s, vt = np.linalg.svd(mat.astype(np.float32), full_matrices=False)
+                u, s, vt = u[:, :k], s[:k], vt[:k, :]
+
+            # Reconstruct: U * S * V^T
+            reconstructed = u @ (s[:, np.newaxis] * vt)
+
+            # Convert to sparse if requested
+            if use_sparse and not issparse(reconstructed):
+                return csr_matrix(reconstructed)
+            elif not use_sparse and issparse(reconstructed):
+                return as_dense(reconstructed)
+            else:
+                return reconstructed
 
     except np.linalg.LinAlgError as e:
         raise RuntimeError(
