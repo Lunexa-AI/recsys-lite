@@ -6,7 +6,7 @@
 [![PyPI version](https://img.shields.io/pypi/v/vector-recsys-lite.svg)](https://pypi.org/project/vector-recsys-lite/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://pre-commit.com/)
 
-**Lightweight SVD recommender for teaching and small-scale production.**
+**Lightweight recommenders for teaching and small-scale production.**
 
 ## 🌟 Why Use vector-recsys-lite?
 
