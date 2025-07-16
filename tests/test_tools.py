@@ -167,3 +167,63 @@ def test_intra_list_diversity_and_coverage():
     # Edge cases
     assert intra_list_diversity([], feats) == 0.0
     assert coverage([], 5) == 0.0
+
+
+def test_metrics_all_zero_ratings():
+    recs = [[0, 0, 0]]
+    actual = [{0}]
+    assert precision_at_k(recs, actual, 3) == 1.0
+    assert recall_at_k(recs, actual, 3) == 1.0
+    assert ndcg_at_k(recs, actual, 3) >= 0.0
+
+
+def test_metrics_large_k():
+    recs = [[1, 2]]
+    actual = [{1}]
+    # k > number of items
+    assert precision_at_k(recs, actual, 10) >= 0.0
+    assert recall_at_k(recs, actual, 10) >= 0.0
+    assert ndcg_at_k(recs, actual, 10) >= 0.0
+
+
+def test_metrics_single_row_col():
+    recs = [[1]]
+    actual = [{1}]
+    assert precision_at_k(recs, actual, 1) == 1.0
+    assert recall_at_k(recs, actual, 1) == 1.0
+    assert ndcg_at_k(recs, actual, 1) == 1.0
+
+
+@pytest.mark.filterwarnings("ignore:Mean of empty slice")
+@pytest.mark.filterwarnings("ignore:invalid value encountered in scalar divide")
+def test_grid_search_cv1_and_empty():
+    param_grid = {"k": [1], "algorithm": ["svd"]}
+    mat = np.zeros((4, 4))
+    result = grid_search(mat, param_grid, cv=1)
+    assert "best_params" in result
+    assert result["best_score"] == 0.0
+
+
+def test_train_test_split_ratings_too_few_nonzeros():
+    mat = np.zeros((3, 3))
+    mat[0, 0] = 1
+    with pytest.raises(ValueError):
+        train_test_split_ratings(mat, test_size=0.5)
+
+
+def test_ndcg_at_k_idcg_zero():
+    recs = [[1, 2, 3]]
+    actual = [set()]
+    assert ndcg_at_k(recs, actual, 3) == 0.0
+
+
+def test_recsys_pipeline_empty_steps():
+    with pytest.raises(ValueError):
+        RecsysPipeline([])
+
+
+def test_train_test_split_ratings_folds_gt_nonzeros():
+    mat = np.zeros((3, 3))
+    mat[0, 0] = 1
+    with pytest.raises(ValueError):
+        train_test_split_ratings(mat, folds=5)

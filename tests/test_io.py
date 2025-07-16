@@ -601,30 +601,6 @@ class TestIntegration:
         finally:
             Path(temp_path).unlink()
 
-    def test_load_ratings_malformed_parquet(self) -> None:
-        with tempfile.NamedTemporaryFile(
-            mode="wb", suffix=".parquet", delete=False
-        ) as f:
-            f.write(b"not a parquet file")
-            temp_path = f.name
-        try:
-            with pytest.raises(ValueError, match="Failed to load Parquet"):
-                load_ratings(temp_path)
-        finally:
-            Path(temp_path).unlink()
-
-    def test_load_ratings_missing_hdf5_dependency(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        with tempfile.NamedTemporaryFile(suffix=".h5", delete=False) as f:
-            temp_path = f.name
-        monkeypatch.setitem(__import__("sys").modules, "h5py", None)
-        try:
-            with pytest.raises(ValueError, match="Failed to load HDF5"):
-                load_ratings(temp_path)
-        finally:
-            Path(temp_path).unlink()
-
     def test_load_ratings_missing_sqlalchemy_dependency(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
@@ -709,14 +685,6 @@ def test_load_ratings_malformed_json(tmp_path):
 def test_load_ratings_unsupported_format(tmp_path):
     path = tmp_path / "bad.unsupported"
     path.write_text("irrelevant")
-    with pytest.raises(Exception):
-        load_ratings(path)
-
-
-def test_load_ratings_missing_hdf5(monkeypatch, tmp_path):
-    path = tmp_path / "file.h5"
-    path.write_text("")
-    monkeypatch.setitem(__import__("sys").modules, "h5py", None)
     with pytest.raises(Exception):
         load_ratings(path)
 

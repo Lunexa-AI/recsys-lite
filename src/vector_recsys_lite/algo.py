@@ -485,6 +485,9 @@ def svd_reconstruct(
         )
 
     try:
+        # Guard: If matrix is empty or all zeros, return zeros and skip SVD
+        if mat.size == 0 or np.all(as_dense(mat) == 0):
+            return np.zeros_like(as_dense(mat))
         if chunk_size:
             # Simple chunking for large matrices
             n_users = mat.shape[0]
@@ -492,8 +495,13 @@ def svd_reconstruct(
             for start in range(0, n_users, chunk_size):
                 end = min(start + chunk_size, n_users)
                 chunk = mat[start:end]
+                # Guard for chunk
+                if chunk.size == 0 or np.all(as_dense(chunk) == 0):
+                    reconstructed[start:end] = 0
+                    continue
                 u, s, vt = svds(chunk, k=k)
-                reconstructed[start:end] = u @ (s[:, np.newaxis] * vt)
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    reconstructed[start:end] = u @ (s[:, np.newaxis] * vt)
             return reconstructed
         else:
             if issparse(mat):
@@ -505,7 +513,8 @@ def svd_reconstruct(
                 u, s, vt = u[:, :k], s[:k], vt[:k, :]
 
             # Reconstruct: U * S * V^T
-            reconstructed = u @ (s[:, np.newaxis] * vt)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                reconstructed = u @ (s[:, np.newaxis] * vt)
 
             # Convert to sparse if requested
             if use_sparse and not issparse(reconstructed):

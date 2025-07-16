@@ -2,6 +2,7 @@
 ML tooling utilities for vector-recsys-lite.
 """
 
+from itertools import product
 from typing import Any, List, Optional
 
 import numpy as np
@@ -59,12 +60,14 @@ def precision_at_k(recs: list[list[int]], actual: list[set[int]], k: int) -> flo
             continue
         relevant = sum(1 for item in r[:k] if item in a)
         precisions.append(relevant / k if k > 0 else 0)
+    if not precisions:
+        return 0.0
     return float(np.nan_to_num(np.mean(precisions), nan=0.0))
 
 
 def recall_at_k(recs: list[list[int]], actual: list[set[int]], k: int) -> float:
     """
-    Compute average recall@k.
+    Compute average recall@k, capped at 1.0 per user.
     """
     if not recs or not actual or k <= 0:
         return 0.0
@@ -74,7 +77,10 @@ def recall_at_k(recs: list[list[int]], actual: list[set[int]], k: int) -> float:
             recalls.append(0.0)
             continue
         relevant = sum(1 for item in r[:k] if item in a)
-        recalls.append(relevant / len(a) if len(a) > 0 else 0)
+        recall_val = relevant / len(a) if len(a) > 0 else 0
+        recalls.append(min(recall_val, 1.0))
+    if not recalls:
+        return 0.0
     return float(np.nan_to_num(np.mean(recalls), nan=0.0))
 
 
@@ -99,6 +105,8 @@ def ndcg_at_k(recs: list[list[int]], actual: list[set[int]], k: int) -> float:
         ideal = sorted([1 if i in a else 0 for i in range(len(r))], reverse=True)[:k]
         idcg = dcg(ideal, set(range(len(ideal))))
         ndcgs.append(dcg_val / idcg if idcg > 0 else 0)
+    if not ndcgs:
+        return 0.0
     return float(np.nan_to_num(np.mean(ndcgs), nan=0.0))
 
 
@@ -125,6 +133,8 @@ def intra_list_diversity(
             diversities.append(np.mean(dist[np.triu_indices(len(r), k=1)]))
         else:
             diversities.append(1.0)  # Assume max diversity if no features
+    if not diversities:
+        return 0.0
     return float(np.nan_to_num(np.mean(diversities), nan=0.0))
 
 
@@ -268,8 +278,6 @@ def grid_search(
     param_grid example: {'k': [10,20], 'algorithm': ['svd','als'], 'bias': [True, False]}
     All params in param_grid are passed as kwargs to RecommenderSystem.fit().
     """
-    from itertools import product
-
     METRIC_FUNCS = {"rmse": compute_rmse, "mae": compute_mae}
     if matrix.size == 0 or not param_grid or cv <= 0:
         return {"best_params": None, "best_score": None, "results": []}
@@ -286,19 +294,31 @@ def grid_search(
             fit_kwargs = {
                 k: v for k, v in param_dict.items() if k not in ("algorithm", "k")
             }
-            rec.fit(train, k=param_dict.get("k", 10), **fit_kwargs)
-            preds = rec.predict(train)
-            if not test:
+            try:
+                rec.fit(train, k=param_dict.get("k", 10), **fit_kwargs)
+                preds = rec.predict(train)
+                if not test:
+                    score = 0.0
+                else:
+                    score = (
+                        np.mean(
+                            [
+                                METRIC_FUNCS[metric](
+                                    np.array([[preds[u, i]]]), np.array([[r]])
+                                )
+                                for u, i, r in test
+                            ]
+                        )
+                        if test
+                        else 0.0
+                    )
+            except Exception:
                 score = 0.0
-            else:
-                score = np.mean(
-                    [
-                        METRIC_FUNCS[metric](np.array([[preds[u, i]]]), np.array([[r]]))
-                        for u, i, r in test
-                    ]
-                )
             fold_scores.append(score)
-        scores.append(np.mean(fold_scores))
+        if fold_scores:
+            scores.append(np.mean(fold_scores))
+        else:
+            scores.append(0.0)
     best_idx = int(np.argmin(scores)) if scores else 0
     return {
         "best_params": (

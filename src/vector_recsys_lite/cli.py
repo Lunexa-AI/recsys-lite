@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 import numpy as np
+import psutil
 import typer
 from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn
@@ -15,6 +16,7 @@ from rich.table import Table
 
 from .algo import compute_mae, compute_rmse, svd_reconstruct, top_n
 from .benchmark import quick_benchmark
+from .explain import visualize_svd
 from .io import create_sample_ratings, load_ratings, save_ratings
 from .utils import as_dense
 
@@ -93,8 +95,6 @@ def predict(
             reconstructed = as_dense(reconstructed)
 
             if explain:
-                from .explain import visualize_svd
-
                 visualize_svd(ratings, k)  # Assuming visualize_svd handles the printing
 
             # Generate recommendations
@@ -152,8 +152,6 @@ def predict(
 
 def bench(csv: Path, k: int = 50, n: int = 10, iterations: int = 1) -> None:
     try:
-        import psutil
-
         has_psutil = True
     except ImportError:
         has_psutil = False
@@ -364,8 +362,6 @@ def teach(
             console.print(f"Sample ratings:\n{ratings}\n")
 
             console.print("Running SVD...")
-            from .explain import visualize_svd
-
             visualize_svd(ratings, k=2)
 
     elif concept == "matrix":

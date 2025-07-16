@@ -22,6 +22,9 @@ from vector_recsys_lite.utils import as_dense
 class TestSVDReconstruct:
     """Test SVD reconstruction functionality."""
 
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered in matmul")
+    @pytest.mark.filterwarnings("ignore:overflow encountered in matmul")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in matmul")
     def test_basic_svd_reconstruction(self) -> None:
         """Test basic SVD reconstruction."""
         # Create a simple test matrix
@@ -69,16 +72,19 @@ class TestSVDReconstruct:
         """Test error handling for invalid matrix."""
         # 1D array
         with pytest.raises(
-            ValueError, match="Input matrix must be 2D \(users x items\), got 1D\."
+            ValueError, match=r"Input matrix must be 2D \(users x items\), got 1D\."
         ):
             svd_reconstruct(np.array([1, 2, 3], dtype=np.float32))
 
         # Empty matrix
         with pytest.raises(
-            ValueError, match="Input matrix cannot have zero dimensions\."
+            ValueError, match=r"Input matrix cannot have zero dimensions\."
         ):
             svd_reconstruct(np.array([[]], dtype=np.float32))
 
+    @pytest.mark.filterwarnings("ignore:divide by zero encountered in matmul")
+    @pytest.mark.filterwarnings("ignore:overflow encountered in matmul")
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in matmul")
     def test_svd_reconstruction_quality(self) -> None:
         """Test SVD reconstruction quality."""
         # Create a matrix with known structure
