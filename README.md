@@ -1,37 +1,29 @@
 # vector_recsys_lite 🧊
 
 [![CI](https://github.com/Lunexa-AI/vector-recsys-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/Lunexa-AI/vector-recsys-lite/actions)
-[![PyPI](https://img.shields.io/pypi/v/vector_recsys_lite)](https://pypi.org/project/vector_recsys_lite/)
 [![Python](https://img.shields.io/badge/python->=3.9-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Downloads](https://img.shields.io/pypi/dm/vector_recsys_lite)](https://pypi.org/project/vector_recsys_lite/)
+[![PyPI version](https://img.shields.io/pypi/v/vector-recsys-lite.svg)](https://pypi.org/project/vector-recsys-lite/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://pre-commit.com/)
-[![Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 **Lightweight SVD recommender for teaching and small-scale production.**
 
-Designed for educators in resource-constrained environments and developers building simple recommenders. Runs offline on old hardware, teaches concepts interactively, deploys easily.
+## 🌟 Why Use vector-recsys-lite?
 
-[Quick Start](#🚀-getting-started) | [Educator Guide](#🎓-for-educators--students) | [Deployment](#🚀-for-small-app-deployers) | [Developers](#🛠️-for-developers)
-
-## 🌟 Why Choose This?
-
-- **Education-Focused**: Interactive teaching mode + notebooks
-- **Resource-Light**: <50MB install, runs on 2GB RAM
-- **Offline-Ready**: No internet needed after install
-- **Simple Production**: One-command API deployment
-- **Multiple Algorithms**: SVD, ALS (implicit), KNN (cosine), with bias handling
-- **Chunked Processing**: Handles larger matrices on low RAM
-
-See [Use Cases](#📚-use-cases).
-
-## ❓ Why This Over a Script?
-
-- **Purpose-built for teaching and learning**: Includes interactive CLI, educator guides, and Jupyter demos—no need to reinvent the wheel for every class or workshop.
-- **Robust, tested, and production-ready**: Handles edge cases, bad input, and large/sparse data gracefully—unlike most one-off scripts.
-- **Offline and lightweight**: Designed for environments with unreliable internet and old hardware; install once, use anywhere.
-- **Extensible and maintainable**: Clean API, modular design, and strong test coverage make it easy to extend or adapt for new use cases.
-- **Community and support**: Contributor guides, issue templates, and a focus on educational impact—join others building for real-world constraints.
+- **Purpose-built for teaching and learning:**
+  Interactive CLI, educator guides, and Jupyter demos—no need to reinvent the wheel for every class or workshop.
+- **Robust, tested, and production-ready:**
+  Handles edge cases, bad input, and large/sparse data gracefully—unlike most one-off scripts.
+- **Resource-light and offline-ready:**
+  <50MB install, runs on 2GB RAM, and works without internet after install.
+- **Simple, reproducible production:**
+  One-command API deployment, clean CLI, and Docker support.
+- **Multiple algorithms, modern tooling:**
+  SVD, ALS (implicit), KNN (cosine), bias handling, chunked processing, and more.
+- **Extensible and community-focused:**
+  Easy to add new datasets, metrics, or algorithms. Contributor-friendly with templates and guides.
+- **World-class documentation and examples:**
+  Notebooks, educator guides, and API docs for fast onboarding.
 
 ---
 
