@@ -72,13 +72,15 @@ class RecommenderSystem:
         self._fitted = False
 
         if algorithm not in ["svd", "als", "knn"]:
-            raise ValueError(f"Unsupported: {algorithm}")
+            raise ValueError(f"Unsupported algorithm: '{algorithm}'")
 
     def is_fitted(self) -> bool:
         """Check if the model has been fitted."""
         return self._fitted
 
-    def fit(self, ratings: FloatMatrix, k: Optional[int] = None) -> "RecommenderSystem":
+    def fit(
+        self, ratings: FloatMatrix, k: Optional[int] = None, **kwargs
+    ) -> "RecommenderSystem":
         """
         Fit the recommender system to the rating matrix.
 
@@ -88,6 +90,8 @@ class RecommenderSystem:
             Rating matrix of shape (n_users, n_items).
         k : Optional[int], default=None
             Number of singular values to use. If None, uses min(n_users, n_items).
+        kwargs : dict
+            Algorithm-specific parameters (e.g., factors, iterations, lambda_, neighbors)
 
         Returns
         -------
@@ -100,9 +104,13 @@ class RecommenderSystem:
             else:
                 self._model = self._fit_svd_dense(ratings, k)
         elif self.algorithm == "als":
-            self._model = self._fit_als(ratings, k or 10)
+            factors = kwargs.get("factors", k or 10)
+            iterations = kwargs.get("iterations", 10)
+            lambda_ = kwargs.get("lambda_", 0.01)
+            self._model = self._fit_als(ratings, factors, iterations, lambda_)
         elif self.algorithm == "knn":
-            self._model = self._fit_knn(ratings, k or 10)
+            neighbors = kwargs.get("neighbors", k or 10)
+            self._model = self._fit_knn(ratings, neighbors)
         else:
             raise ValueError(f"Unsupported algorithm: {self.algorithm}")
 
@@ -149,10 +157,14 @@ class RecommenderSystem:
                         top_neighbors = np.argsort(sim_scores)[-model["neighbors"] :]
                         weights = sim_scores[top_neighbors]
                         rated = ratings[u, top_neighbors] > 0
-                        if np.sum(rated) > 0:
-                            preds[u, i] = np.dot(
-                                weights[rated], ratings[u, top_neighbors[rated]]
-                            ) / np.sum(weights[rated])
+                        denom = np.sum(weights[rated])
+                        if np.sum(rated) > 0 and denom > 0:
+                            preds[u, i] = (
+                                np.dot(weights[rated], ratings[u, top_neighbors[rated]])
+                                / denom
+                            )
+                        else:
+                            preds[u, i] = 0.0
             return preds
         else:
             raise ValueError(f"Unsupported algorithm: {self.algorithm}")
@@ -243,32 +255,38 @@ class RecommenderSystem:
             k = max(1, min(n_users, n_items) // 4)
 
         # Compute biases
-        global_bias = np.mean(ratings.data[ratings.data > 0])
+        global_bias = (
+            np.mean(ratings.data[ratings.data > 0]) if ratings.nnz > 0 else 0.0
+        )
         user_bias = np.array(
             [
-                np.mean(
-                    ratings.data[ratings.row == u][ratings.data[ratings.row == u] > 0]
+                (
+                    np.mean(ratings.getrow(u).data[ratings.getrow(u).data > 0])
+                    - global_bias
+                    if ratings.getrow(u).nnz > 0
+                    else 0.0
                 )
-                - global_bias
                 for u in range(n_users)
             ]
         )
         item_bias = np.array(
             [
-                np.mean(
-                    ratings.data[ratings.col == i][ratings.data[ratings.col == i] > 0]
+                (
+                    np.mean(ratings.getcol(i).data[ratings.getcol(i).data > 0])
+                    - global_bias
+                    if ratings.getcol(i).nnz > 0
+                    else 0.0
                 )
-                - global_bias
                 for i in range(n_items)
             ]
         )
-        centered = ratings.data - global_bias - user_bias[:, np.newaxis] - item_bias
-
+        # Convert to dense for bias subtraction (sparse doesn't support scalar subtraction)
+        dense = ratings.toarray()
+        centered = dense - global_bias - user_bias[:, np.newaxis] - item_bias
         # Use scipy's svds for sparse matrices
         u, s, vt = svds(
             centered.astype(np.float32), k=k, random_state=self.random_state
         )
-
         return {
             "u": u,
             "s": s,

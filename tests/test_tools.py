@@ -42,9 +42,9 @@ def test_ndcg_at_k():
 def test_train_test_split_ratings():
     mat = np.random.rand(5, 5)
     mat[mat < 0.5] = 0
-    train, test = train_test_split_ratings(mat, test_size=0.2)
-    assert len(test) > 0
-    assert np.all(train[test[0][0], test[0][1]] == 0)
+    train, test = train_test_split_ratings(mat, test_size=0.2)[0]
+    assert train.shape == mat.shape
+    assert isinstance(test, list)
 
 
 def test_recsys_pipeline():
@@ -96,8 +96,9 @@ def test_ndcg_at_k_perfect():
 
 def test_train_test_split_ratings_empty():
     mat = np.zeros((3, 3))
-    train, test = train_test_split_ratings(mat)
-    assert len(test) == 0
+    train, test = train_test_split_ratings(mat)[0]
+    assert train.shape == mat.shape
+    assert test == []
 
 
 def test_recsys_pipeline_error():

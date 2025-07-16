@@ -6,7 +6,7 @@ from typing import Any, List, Optional
 
 import numpy as np
 
-from .algo import RecommenderSystem, top_n
+from .algo import RecommenderSystem, compute_mae, compute_rmse, top_n
 
 TOY_DATASETS = {
     "tiny_example": np.array(
@@ -49,37 +49,41 @@ def load_toy_dataset(name: str = "tiny_example") -> np.ndarray:
 def precision_at_k(recs: list[list[int]], actual: list[set[int]], k: int) -> float:
     """
     Compute average precision@k.
-
-    Args:
-        recs: List of recommended item lists per user
-        actual: List of sets of actual relevant items per user
-        k: Top k to consider
-
-    Returns:
-        Mean precision@k
     """
+    if not recs or not actual or k <= 0:
+        return 0.0
     precisions = []
     for r, a in zip(recs, actual):
+        if not r or not a:
+            precisions.append(0.0)
+            continue
         relevant = sum(1 for item in r[:k] if item in a)
         precisions.append(relevant / k if k > 0 else 0)
-    return np.mean(precisions)
+    return float(np.nan_to_num(np.mean(precisions), nan=0.0))
 
 
 def recall_at_k(recs: list[list[int]], actual: list[set[int]], k: int) -> float:
     """
     Compute average recall@k.
     """
+    if not recs or not actual or k <= 0:
+        return 0.0
     recalls = []
     for r, a in zip(recs, actual):
+        if not r or not a:
+            recalls.append(0.0)
+            continue
         relevant = sum(1 for item in r[:k] if item in a)
         recalls.append(relevant / len(a) if len(a) > 0 else 0)
-    return np.mean(recalls)
+    return float(np.nan_to_num(np.mean(recalls), nan=0.0))
 
 
 def ndcg_at_k(recs: list[list[int]], actual: list[set[int]], k: int) -> float:
     """
     Compute average NDCG@k (Normalized Discounted Cumulative Gain).
     """
+    if not recs or not actual or k <= 0:
+        return 0.0
 
     def dcg(items: list[int], rel: set[int]) -> float:
         return sum(
@@ -88,14 +92,14 @@ def ndcg_at_k(recs: list[list[int]], actual: list[set[int]], k: int) -> float:
 
     ndcgs = []
     for r, a in zip(recs, actual):
-        if not a:
+        if not a or not r:
             ndcgs.append(0.0)
             continue
         dcg_val = dcg(r[:k], a)
         ideal = sorted([1 if i in a else 0 for i in range(len(r))], reverse=True)[:k]
         idcg = dcg(ideal, set(range(len(ideal))))
         ndcgs.append(dcg_val / idcg if idcg > 0 else 0)
-    return np.mean(ndcgs)
+    return float(np.nan_to_num(np.mean(ndcgs), nan=0.0))
 
 
 def intra_list_diversity(
@@ -143,25 +147,29 @@ def train_test_split_ratings(
     Split ratings matrix into train/test by masking test ratings.
     Support multiple folds for CV.
     """
+    if folds is None:
+        folds = 1
+    if matrix.size == 0 or np.all(matrix == 0):
+        return [(matrix.copy(), [])]
     if folds == 1:
         if random_state is not None:
             np.random.seed(random_state)
-
         train = matrix.copy()
         non_zero = np.argwhere(matrix > 0)
         n_test = int(len(non_zero) * test_size)
+        if n_test == 0:
+            return [(train, [])]
         test_idx = np.random.choice(len(non_zero), n_test, replace=False)
-
         test = []
         for idx in test_idx:
             i, j = non_zero[idx]
             test.append((i, j, matrix[i, j]))
             train[i, j] = 0
-
         return [(train, test)]
     else:
-        # Simple k-fold by splitting non-zeros
         non_zero = np.argwhere(matrix > 0)
+        if len(non_zero) == 0:
+            return [(matrix.copy(), []) for _ in range(folds)]
         np.random.shuffle(non_zero)
         fold_size = len(non_zero) // folds
         splits = []
@@ -224,11 +232,13 @@ def grid_search(
 ) -> dict[str, Any]:
     """
     Grid search over parameter grid.
-
     param_grid example: {'k': [10,20], 'algorithm': ['svd','als']}
     """
     from itertools import product
 
+    METRIC_FUNCS = {"rmse": compute_rmse, "mae": compute_mae}
+    if matrix.size == 0 or not param_grid or cv <= 0:
+        return {"best_params": None, "best_score": None, "results": []}
     params_list = list(product(*param_grid.values()))
     param_names = list(param_grid.keys())
     scores = []
@@ -236,27 +246,31 @@ def grid_search(
         param_dict = dict(zip(param_names, params))
         fold_scores = []
         for _ in range(cv):
-            train, test = train_test_split_ratings(matrix, 1 / cv, random_state)
+            splits = train_test_split_ratings(matrix, 1 / cv, random_state)
+            train, test = splits[0] if splits else (matrix.copy(), [])
             rec = RecommenderSystem(algorithm=param_dict.get("algorithm", "svd"))
             rec.fit(train, k=param_dict.get("k", 10))
             preds = rec.predict(train)
-            score = np.mean(
-                [
-                    globals()[f"compute_{metric}"](
-                        np.array([[preds[u, i]]]), np.array([[r]])
-                    )
-                    for u, i, r in test
-                ]
-            )
+            if not test:
+                score = 0.0
+            else:
+                score = np.mean(
+                    [
+                        METRIC_FUNCS[metric](np.array([[preds[u, i]]]), np.array([[r]]))
+                        for u, i, r in test
+                    ]
+                )
             fold_scores.append(score)
-        mean_score = np.mean(fold_scores)
-        scores.append((param_dict, mean_score))
-    best = (
-        min(scores, key=lambda x: x[1])
-        if metric in ["rmse", "mae"]
-        else max(scores, key=lambda x: x[1])
-    )
-    return {"best_params": best[0], "best_score": best[1], "all_scores": scores}
+        scores.append(np.mean(fold_scores))
+    best_idx = int(np.argmin(scores)) if scores else 0
+    return {
+        "best_params": (
+            dict(zip(param_names, params_list[best_idx])) if scores else None
+        ),
+        "best_score": scores[best_idx] if scores else None,
+        "results": scores,
+        "all_scores": scores,
+    }
 
 
 PRETRAINED_MODELS = {

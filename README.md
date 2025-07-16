@@ -20,6 +20,8 @@ Designed for educators in resource-constrained environments and developers build
 - **Resource-Light**: <50MB install, runs on 2GB RAM
 - **Offline-Ready**: No internet needed after install
 - **Simple Production**: One-command API deployment
+- **Multiple Algorithms**: SVD, ALS (implicit), KNN (cosine), with bias handling
+- **Chunked Processing**: Handles larger matrices on low RAM
 
 See [Use Cases](#📚-use-cases).
 
@@ -81,10 +83,38 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [API Reference](#🔧-api-reference).
 
 ### ML Tooling Examples
 
-**Toy Datasets**:
+**ALS (Implicit Feedback)**:
 ```python
-from vector_recsys_lite import load_toy_dataset
-mat = load_toy_dataset('tiny_example')
+from vector_recsys_lite import RecommenderSystem
+ratings = np.array([[1, 0, 1], [0, 1, 0]], dtype=np.float32)  # binary implicit
+model = RecommenderSystem(algorithm="als")
+model.fit(ratings, k=2)
+preds = model.predict(ratings)
+```
+
+**KNN (Cosine Similarity)**:
+```python
+from vector_recsys_lite import RecommenderSystem
+ratings = np.array([[5, 3, 0], [0, 0, 4]], dtype=np.float32)
+model = RecommenderSystem(algorithm="knn")
+model.fit(ratings, k=2)
+preds = model.predict(ratings)
+```
+
+**Bias Handling (SVD)**:
+```python
+from vector_recsys_lite import RecommenderSystem
+ratings = np.array([[5, 3, 0], [0, 0, 4]], dtype=np.float32)
+model = RecommenderSystem(algorithm="svd")
+model.fit(ratings, k=2)
+preds = model.predict(ratings)  # Includes global/user/item bias
+```
+
+**Chunked SVD**:
+```python
+from vector_recsys_lite import svd_reconstruct
+large_mat = np.random.rand(10000, 500)
+reconstructed = svd_reconstruct(large_mat, k=10, use_sparse=True)
 ```
 
 **Metrics**:
@@ -174,7 +204,7 @@ def svd_reconstruct(
     random_state: Optional[int] = None,
     use_sparse: bool = True,
 ) -> FloatMatrix:
-    """Truncated SVD reconstruction for collaborative filtering."""
+    """Truncated SVD reconstruction for collaborative filtering. Supports chunked processing for large matrices."""
 
 def top_n(
     est: FloatMatrix,
@@ -228,20 +258,18 @@ def create_sample_ratings(
 
 ```python
 class RecommenderSystem:
-    """Production-ready recommender system with model persistence."""
+    """Production-ready recommender system with model persistence. Supports SVD, ALS (implicit), and KNN algorithms, with bias handling."""
 
+    def __init__(self, algorithm: str = "svd", ...):
+        """algorithm: 'svd', 'als', or 'knn'"""
     def fit(self, ratings: FloatMatrix, k: Optional[int] = None) -> "RecommenderSystem":
         """Fit the model to training data."""
-
     def predict(self, ratings: FloatMatrix) -> FloatMatrix:
         """Generate predictions for the input matrix."""
-
     def recommend(self, ratings: FloatMatrix, n: int = 10, exclude_rated: bool = True) -> np.ndarray:
         """Generate top-N recommendations for each user."""
-
     def save(self, path: str) -> None:
         """Save model to file using secure joblib serialization."""
-
     @classmethod
     def load(cls, path: str) -> "RecommenderSystem":
         """Load model from file."""
