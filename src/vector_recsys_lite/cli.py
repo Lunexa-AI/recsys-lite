@@ -333,5 +333,83 @@ def recommend(user_id: int, n: int = 5):
     )
 
 
+@cli.command()
+def teach(
+    concept: str = typer.Option(
+        "svd",
+        "--concept",
+        "-c",
+        help="Concept to teach: svd, matrix, factors, recommendations",
+    ),
+) -> None:
+    """
+    Interactive teaching mode for learning recommender system concepts.
+
+    Examples:
+        vector-recsys teach --concept svd
+        vector-recsys teach --concept matrix
+    """
+    console.print(f"[bold cyan]Teaching Mode: {concept.upper()}[/bold cyan]\n")
+
+    if concept == "svd":
+        console.print("[yellow]Singular Value Decomposition (SVD) Explained:[/yellow]")
+        console.print("SVD breaks down a matrix into 3 components:")
+        console.print("• U: User features (what users like)")
+        console.print("• S: Importance values (how strong each pattern is)")
+        console.print("• V: Item features (what makes items similar)\n")
+
+        if typer.confirm("Would you like to see a demo?"):
+            console.print("\nCreating a small example...")
+            ratings = create_sample_ratings(n_users=3, n_items=4, sparsity=0.5)
+            console.print(f"Sample ratings:\n{ratings}\n")
+
+            console.print("Running SVD...")
+            from .explain import visualize_svd
+
+            visualize_svd(ratings, k=2)
+
+    elif concept == "matrix":
+        console.print("[yellow]User-Item Rating Matrix:[/yellow]")
+        console.print("• Rows = Users")
+        console.print("• Columns = Items")
+        console.print("• Values = Ratings (0 means unrated)")
+        console.print("• Goal: Predict the 0s!\n")
+
+        if typer.confirm("Generate example matrix?"):
+            mat = create_sample_ratings(n_users=4, n_items=5, sparsity=0.6)
+            console.print(f"\nExample matrix:\n{mat}")
+            console.print(f"\nShape: {mat.shape[0]} users × {mat.shape[1]} items")
+            console.print(
+                f"Sparsity: {np.count_nonzero(mat == 0) / mat.size:.1%} unrated"
+            )
+
+    elif concept == "factors":
+        console.print("[yellow]Latent Factors:[/yellow]")
+        console.print("Think of factors as hidden preferences:")
+        console.print("• Factor 1 might be 'Action vs Romance'")
+        console.print("• Factor 2 might be 'Old vs New'")
+        console.print("• Users and items are positioned in this space\n")
+        console.print("SVD automatically discovers these patterns!")
+
+    elif concept == "recommendations":
+        console.print("[yellow]Making Recommendations:[/yellow]")
+        console.print("1. Start with incomplete ratings")
+        console.print("2. Use SVD to find patterns")
+        console.print("3. Reconstruct full matrix")
+        console.print("4. Recommend highest predicted ratings\n")
+
+        if typer.confirm("Run recommendation demo?"):
+            ratings = create_sample_ratings(n_users=5, n_items=10, sparsity=0.7)
+            reconstructed = svd_reconstruct(ratings, k=3)
+            recs = top_n(reconstructed, ratings, n=3)
+
+            console.print("\nTop-3 recommendations per user:")
+            for i, user_recs in enumerate(recs[:3]):
+                console.print(f"User {i}: Items {user_recs}")
+    else:
+        console.print(f"[red]Unknown concept: {concept}[/red]")
+        console.print("Available: svd, matrix, factors, recommendations")
+
+
 if __name__ == "__main__":
     cli()
