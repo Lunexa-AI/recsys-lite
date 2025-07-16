@@ -212,9 +212,11 @@ class RecommenderSystem:
         )
         item_bias = np.array(
             [
-                np.mean(ratings[:, i][ratings[:, i] > 0]) - global_bias
-                if np.sum(ratings[:, i] > 0) > 0
-                else 0
+                (
+                    np.mean(ratings[:, i][ratings[:, i] > 0]) - global_bias
+                    if np.sum(ratings[:, i] > 0) > 0
+                    else 0
+                )
                 for i in range(n_items)
             ]
         )
