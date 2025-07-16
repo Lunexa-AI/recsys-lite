@@ -79,6 +79,44 @@ Extend or contribute easily.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [API Reference](#🔧-api-reference).
 
+### ML Tooling Examples
+
+**Toy Datasets**:
+```python
+from vector_recsys_lite import load_toy_dataset
+mat = load_toy_dataset('tiny_example')
+```
+
+**Metrics**:
+```python
+recs = [[1,2,3], [4,5]]
+actual = [{1,3}, {4,6}]
+print(precision_at_k(recs, actual, 3))
+print(recall_at_k(recs, actual, 3))
+print(ndcg_at_k(recs, actual, 3))
+```
+
+**CV Split**:
+```python
+train, test = train_test_split_ratings(mat, test_size=0.2)
+```
+
+**Pipeline**:
+```python
+from vector_recsys_lite import RecsysPipeline, RecommenderSystem
+pipe = RecsysPipeline([('model', RecommenderSystem())])
+pipe.fit(mat, k=2)
+recs = pipe.recommend(mat, n=3)
+```
+
+**Grid Search**:
+```python
+result = grid_search_k(mat, [2,4], 'rmse')
+print(result['best_k'])
+```
+
+Full details in API Reference.
+
 ## 📚 Use Cases
 
 ### Education
