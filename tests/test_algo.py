@@ -15,6 +15,7 @@ from vector_recsys_lite.algo import (
     svd_reconstruct,
     top_n,
 )
+from vector_recsys_lite.tools import grid_search, train_test_split_ratings
 from vector_recsys_lite.utils import as_dense
 
 
@@ -650,10 +651,26 @@ class TestRecommenderSystemAdvanced:
         sparse_mat = sparse.csr_matrix(dense)
         # _fit_svd_dense
         model_dense = recommender._fit_svd_dense(dense, k=2)
-        assert set(model_dense.keys()) == {"u", "s", "vt", "k"}
+        assert set(model_dense.keys()) == {
+            "u",
+            "s",
+            "vt",
+            "k",
+            "global_bias",
+            "user_bias",
+            "item_bias",
+        }
         # _fit_svd_sparse
         model_sparse = recommender._fit_svd_sparse(sparse_mat, k=2)
-        assert set(model_sparse.keys()) == {"u", "s", "vt", "k"}
+        assert set(model_sparse.keys()) == {
+            "u",
+            "s",
+            "vt",
+            "k",
+            "global_bias",
+            "user_bias",
+            "item_bias",
+        }
         # _predict_svd
         recommender._model = model_dense
         pred = recommender._predict_svd(dense)
@@ -665,6 +682,55 @@ class TestRecommenderSystemAdvanced:
         recommender._model = model_sparse
         pred2 = recommender._predict_svd(dense)
         assert pred2.shape == dense.shape
+
+
+class TestALS:
+    def test_fit_als_basic(self):
+        ratings = np.array([[1, 0, 1], [0, 1, 0]], dtype=np.float32)
+        model = RecommenderSystem(algorithm="als")
+        model.fit(ratings, factors=2, iterations=2, lambda_=0.01)
+        assert "user_factors" in model._model
+        assert "item_factors" in model._model
+
+    def test_predict_als(self):
+        ratings = np.array([[1, 0, 1], [0, 1, 0]], dtype=np.float32)
+        model = RecommenderSystem(algorithm="als")
+        model.fit(ratings, factors=2, iterations=2, lambda_=0.01)
+        preds = model.predict(ratings)
+        assert preds.shape == ratings.shape
+
+
+class TestKNN:
+    def test_fit_knn(self):
+        ratings = np.array([[5, 3, 0], [0, 0, 4]], dtype=np.float32)
+        model = RecommenderSystem(algorithm="knn")
+        model.fit(ratings, neighbors=2)
+        assert "item_sim" in model._model
+        assert "neighbors" in model._model
+
+    def test_predict_knn(self):
+        ratings = np.array([[5, 3, 0], [0, 0, 4]], dtype=np.float32)
+        model = RecommenderSystem(algorithm="knn")
+        model.fit(ratings, neighbors=2)
+        preds = model.predict(ratings)
+        assert preds.shape == ratings.shape
+        assert not np.any(np.isnan(preds))
+
+
+class TestBias:
+    def test_bias_in_svd(self):
+        ratings = np.array([[5, 3, 0], [0, 0, 4]], dtype=np.float32)
+        model = RecommenderSystem(algorithm="svd")
+        model.fit(ratings, k=2)
+        m = model._model
+        assert "global_bias" in m and "user_bias" in m and "item_bias" in m
+
+
+class TestChunkedSVD:
+    def test_chunked_reconstruct(self):
+        mat = np.random.rand(100, 10).astype(np.float32)
+        reconstructed = svd_reconstruct(mat, k=2, use_sparse=True)
+        assert reconstructed.shape == mat.shape
 
 
 def test_svd_reconstruct_invalid_sparse(monkeypatch):
@@ -914,3 +980,28 @@ def test_benchmark_algorithm_unknown():
 
     with pytest.raises(ValueError, match="Unknown algorithm"):
         benchmark_algorithm("not_a_real_algo", a)
+
+
+def test_train_test_split_ratings():
+    mat = np.random.rand(5, 5)
+    mat[mat < 0.5] = 0
+    train, test = train_test_split_ratings(mat, test_size=0.2)[0]
+    assert train.shape == mat.shape
+    assert isinstance(test, list)
+
+
+def test_train_test_split_ratings_empty():
+    mat = np.zeros((3, 3))
+    train, test = train_test_split_ratings(mat)[0]
+    assert train.shape == mat.shape
+    assert test == []
+
+
+def test_grid_search():
+    param_grid = {"k": [1, 2], "algorithm": ["svd"]}
+    mat = np.random.rand(4, 4)
+    mat[mat < 0.5] = 0
+    result = grid_search(mat, param_grid, cv=2)
+    assert "best_params" in result
+    assert "best_score" in result
+    assert "results" in result
