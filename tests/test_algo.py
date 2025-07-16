@@ -667,6 +667,53 @@ class TestRecommenderSystemAdvanced:
         assert pred2.shape == dense.shape
 
 
+class TestALS:
+    def test_fit_als_basic(self):
+        mat = np.array([[1, 0, 1], [0, 1, 0]], dtype=float)
+        rec = RecommenderSystem(algorithm="als")
+        rec.fit(mat, factors=2, iterations=2)
+        assert rec._model is not None
+        assert rec._model["factors"] == 2
+
+    def test_predict_als(self):
+        mat = np.array([[1, 0], [0, 1]], dtype=float)
+        rec = RecommenderSystem(algorithm="als").fit(mat, k=1)
+        preds = rec.predict(mat)
+        assert preds.shape == mat.shape
+        assert np.all(preds >= 0)
+
+
+class TestKNN:
+    def test_fit_knn(self):
+        mat = np.array([[5, 3, 0], [4, 0, 1]], dtype=float)
+        rec = RecommenderSystem(algorithm="knn").fit(mat, neighbors=2)
+        assert "item_sim" in rec._model
+
+    def test_predict_knn(self):
+        mat = np.array([[5, 0], [0, 5]], dtype=float)
+        rec = RecommenderSystem(algorithm="knn").fit(mat, k=1)
+        preds = rec.predict(mat)
+        assert preds[0, 1] > 0  # Should predict based on similarity
+
+
+class TestBias:
+    def test_bias_in_svd(self):
+        mat = np.array([[2, 3], [4, 5]], dtype=float)
+        rec = RecommenderSystem().fit(mat, k=1)
+        preds = rec.predict(mat)
+        assert "global_bias" in rec._model
+        assert np.mean(preds) == pytest.approx(np.mean(mat), 0.1)
+
+
+class TestChunkedSVD:
+    def test_chunked_reconstruct(self):
+        mat = np.random.rand(10, 5)
+        full = svd_reconstruct(mat, k=2)
+        chunked = svd_reconstruct(mat, k=2, chunk_size=5)
+        assert full.shape == chunked.shape
+        assert np.allclose(full, chunked, atol=1e-5)
+
+
 def test_svd_reconstruct_invalid_sparse(monkeypatch):
     import scipy.sparse
 

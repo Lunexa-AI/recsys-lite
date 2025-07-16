@@ -26,3 +26,15 @@ def visualize_svd(mat: np.ndarray, k: int, random_state: Optional[int] = None) -
     print("Sample V^T (first 3 factors x items):")
     print(vt[:, :3])
     print("\nReconstruction: U * diag(S) * V^T approximates original matrix.")
+
+
+def ascii_heatmap(matrix: np.ndarray, title: str = "Matrix Heatmap") -> None:
+    """
+    Print ASCII heatmap of matrix.
+    """
+    print(f"\n{title}:")
+    max_val = np.max(matrix)
+    chars = " .:-=+*#%@"
+    for row in matrix:
+        line = " ".join(chars[int(val / max_val * (len(chars) - 1))] for val in row)
+        print(line)

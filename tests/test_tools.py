@@ -4,7 +4,7 @@ import pytest
 from vector_recsys_lite import RecommenderSystem
 from vector_recsys_lite.tools import (
     RecsysPipeline,
-    grid_search_k,
+    grid_search,
     load_toy_dataset,
     ndcg_at_k,
     precision_at_k,
@@ -61,9 +61,50 @@ def test_recsys_pipeline():
     assert len(recs) == 3
 
 
-def test_grid_search_k():
-    mat = np.random.rand(5, 5)
+def test_grid_search():
+    param_grid = {"k": [1, 2], "algorithm": ["svd"]}
+    mat = np.random.rand(4, 4)
     mat[mat < 0.5] = 0
-    result = grid_search_k(mat, k_values=[1, 2], metric="rmse", cv=2)
-    assert "best_k" in result
-    assert len(result["scores"]) == 2
+    result = grid_search(mat, param_grid, cv=2)
+    assert "best_params" in result
+    assert len(result["all_scores"]) == 2
+
+
+@pytest.mark.parametrize("name", ["tiny_example", "small_movielens"])
+def test_load_toy_dataset_param(name):
+    mat = load_toy_dataset(name)
+    assert mat.ndim == 2
+    assert np.all(mat >= 0)
+
+
+def test_precision_at_k_empty():
+    assert precision_at_k([], [], 5) == 0.0
+    assert precision_at_k([[1]], [set()], 1) == 0.0
+
+
+def test_recall_at_k_all_relevant():
+    recs = [[1, 2]]
+    actual = [{1, 2}]
+    assert recall_at_k(recs, actual, 2) == 1.0
+
+
+def test_ndcg_at_k_perfect():
+    recs = [[1, 2]]
+    actual = [{1, 2}]
+    assert ndcg_at_k(recs, actual, 2) == 1.0
+
+
+def test_train_test_split_ratings_empty():
+    mat = np.zeros((3, 3))
+    train, test = train_test_split_ratings(mat)
+    assert len(test) == 0
+
+
+def test_recsys_pipeline_error():
+    class BadStep:
+        def fit(self, X):
+            raise ValueError("Test error")
+
+    pipe = RecsysPipeline([("bad", BadStep())])
+    with pytest.raises(RuntimeError):
+        pipe.fit(np.zeros((2, 2)))

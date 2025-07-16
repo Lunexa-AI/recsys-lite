@@ -15,7 +15,7 @@ from .explain import visualize_svd
 from .io import create_sample_ratings, load_ratings, save_ratings
 from .tools import (
     RecsysPipeline,
-    grid_search_k,
+    grid_search,
     load_toy_dataset,
     ndcg_at_k,
     precision_at_k,
@@ -40,5 +40,5 @@ __all__ = [
     "ndcg_at_k",
     "train_test_split_ratings",
     "RecsysPipeline",
-    "grid_search_k",
+    "grid_search",
 ]
