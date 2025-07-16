@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "vector_recsys_lite"
-version = "0.1.5"
-description = "🔥 Lightweight SVD recommender for teaching and small-scale production"
+version = "0.1.6"
+description = "🔥 Lightweight recommenders for teaching and small-scale production"
 authors = ["Simbarashe Timire <stimire92@gmail.com>"]
 license = "MIT"
 readme = "README.md"
@@ -18,8 +18,8 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Recommendation Systems",
+    "Topic :: Scientific/Engineering :: AI",
 ]
 
 [tool.poetry.scripts]
