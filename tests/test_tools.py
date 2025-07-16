@@ -109,3 +109,61 @@ def test_recsys_pipeline_error():
     pipe = RecsysPipeline([("bad", BadStep())])
     with pytest.raises(RuntimeError):
         pipe.fit(np.zeros((2, 2)))
+
+
+def test_train_test_split_ratings_stratified():
+    mat = np.zeros((10, 10))
+    mat[:5, :5] = 1
+    mat[5:, 5:] = 2
+    # Stratified split should preserve 1s and 2s in test set
+    train, test = train_test_split_ratings(mat, test_size=0.2, stratified=True)[0]
+    test_ratings = [r for _, _, r in test]
+    assert set(test_ratings).issubset({1, 2})
+    # Check at least one of each rating in test set
+    assert 1 in test_ratings and 2 in test_ratings
+
+
+def test_recsys_pipeline_shape_validation():
+    class BadTransformer:
+        def transform(self, X):
+            return X[:, : X.shape[1] // 2]  # Change shape
+
+    pipe = RecsysPipeline([("bad", BadTransformer()), ("rec", RecommenderSystem())])
+    mat = np.random.rand(4, 4)
+    with pytest.raises(RuntimeError, match="Shape mismatch after step"):
+        pipe.fit(mat, k=2)
+    with pytest.raises(RuntimeError, match="Shape mismatch after step"):
+        pipe.predict(mat)
+
+
+def test_grid_search_extra_params():
+    param_grid = {"k": [1], "algorithm": ["svd"], "bias": [True, False]}
+    mat = np.random.rand(4, 4)
+    mat[mat < 0.5] = 0
+    result = grid_search(mat, param_grid, cv=2)
+    assert "best_params" in result
+    assert "all_scores" in result
+
+
+def test_load_pretrained_model():
+    from vector_recsys_lite.tools import load_pretrained_model
+
+    rec = load_pretrained_model("tiny_svd")
+    assert rec.is_fitted()
+    assert hasattr(rec, "predict")
+    with pytest.raises(ValueError):
+        load_pretrained_model("not_a_model")
+
+
+def test_intra_list_diversity_and_coverage():
+    from vector_recsys_lite.tools import coverage, intra_list_diversity
+
+    recs = [[1, 2, 3], [2, 3, 4]]
+    feats = np.eye(5)
+    div = intra_list_diversity(recs, feats)
+    assert 0.0 <= div <= 1.0
+    cov = coverage(recs, 5)
+    assert 0.0 <= cov <= 1.0
+    # Edge cases
+    assert intra_list_diversity([], feats) == 0.0
+    assert coverage([], 5) == 0.0

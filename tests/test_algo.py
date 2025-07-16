@@ -1005,3 +1005,25 @@ def test_grid_search():
     assert "best_params" in result
     assert "best_score" in result
     assert "results" in result
+
+
+def test_ascii_heatmap_and_visualize_svd():
+    import numpy as np
+
+    from vector_recsys_lite.explain import ascii_heatmap, visualize_svd
+
+    mat = np.array([[1, 2], [3, 4]], dtype=np.float32)
+    # ASCII only
+    ascii_heatmap(mat, title="Test Heatmap", plot=False)
+    # Try with plot (should not error even if matplotlib missing)
+    try:
+        ascii_heatmap(mat, title="Test Heatmap", plot=True)
+    except Exception:
+        pass
+    # SVD visualization (ASCII only)
+    visualize_svd(mat, k=1, plot=False)
+    # SVD visualization with plot
+    try:
+        visualize_svd(mat, k=1, plot=True)
+    except Exception:
+        pass
