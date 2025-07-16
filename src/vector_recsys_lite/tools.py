@@ -109,6 +109,8 @@ def intra_list_diversity(
     Compute average intra-list diversity.
     If item_features provided, use cosine distance; else assume uniform.
     """
+    if not recs:
+        return 0.0
     diversities = []
     for r in recs:
         if len(r) < 2:
@@ -123,7 +125,7 @@ def intra_list_diversity(
             diversities.append(np.mean(dist[np.triu_indices(len(r), k=1)]))
         else:
             diversities.append(1.0)  # Assume max diversity if no features
-    return np.mean(diversities)
+    return float(np.nan_to_num(np.mean(diversities), nan=0.0))
 
 
 def coverage(recs: list[list[int]], total_items: int) -> float:
@@ -145,17 +147,40 @@ def train_test_split_ratings(
 ) -> list[tuple[np.ndarray, list[tuple[int, int, float]]]]:
     """
     Split ratings matrix into train/test by masking test ratings.
-    Support multiple folds for CV.
+    Support multiple folds for CV. If stratified=True, preserve rating distribution in test set.
     """
     if folds is None:
         folds = 1
     if matrix.size == 0 or np.all(matrix == 0):
         return [(matrix.copy(), [])]
+    non_zero = np.argwhere(matrix > 0)
+    if len(non_zero) < 2:
+        raise ValueError("Not enough non-zero ratings for splitting.")
+    if stratified:
+        # Bin by rating value
+        unique_ratings = np.unique(matrix[matrix > 0])
+        test_indices = []
+        for val in unique_ratings:
+            val_indices = np.argwhere(matrix == val)
+            n_val = len(val_indices)
+            n_test_val = max(1, int(n_val * test_size))
+            if n_val == 0:
+                continue
+            if random_state is not None:
+                np.random.seed(random_state)
+            chosen = np.random.choice(n_val, n_test_val, replace=False)
+            test_indices.extend(val_indices[chosen])
+        test_indices = np.array(test_indices)
+        train = matrix.copy()
+        test = []
+        for i, j in test_indices:
+            test.append((i, j, matrix[i, j]))
+            train[i, j] = 0
+        return [(train, test)]
     if folds == 1:
         if random_state is not None:
             np.random.seed(random_state)
         train = matrix.copy()
-        non_zero = np.argwhere(matrix > 0)
         n_test = int(len(non_zero) * test_size)
         if n_test == 0:
             return [(train, [])]
@@ -167,7 +192,6 @@ def train_test_split_ratings(
             train[i, j] = 0
         return [(train, test)]
     else:
-        non_zero = np.argwhere(matrix > 0)
         if len(non_zero) == 0:
             return [(matrix.copy(), []) for _ in range(folds)]
         np.random.shuffle(non_zero)
@@ -183,7 +207,6 @@ def train_test_split_ratings(
                 train[u, i] = 0
             splits.append((train, test))
         return splits
-    # For stratified: If true, bin ratings and sample proportionally (add logic)
 
 
 class RecsysPipeline:
@@ -194,26 +217,36 @@ class RecsysPipeline:
 
     def fit(self, X: np.ndarray, **fit_params) -> "RecsysPipeline":
         data = X
-        for name, step in self.steps:
+        for idx, (name, step) in enumerate(self.steps):
             try:
                 if hasattr(step, "fit"):
                     step.fit(data, **fit_params)
                 if hasattr(step, "transform"):
-                    data = step.transform(data)
+                    new_data = step.transform(data)
+                    if new_data.shape != data.shape:
+                        raise ValueError(
+                            f"Shape mismatch after step '{name}': {new_data.shape} vs {data.shape}"
+                        )
+                    data = new_data
             except Exception as e:
                 raise RuntimeError(f"Error in pipeline step '{name}': {str(e)}") from e
         return self
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         data = X
-        for name, step in self.steps:
+        for idx, (name, step) in enumerate(self.steps):
             try:
                 if hasattr(step, "predict"):
-                    data = step.predict(data)
+                    new_data = step.predict(data)
                 elif hasattr(step, "transform"):
-                    data = step.transform(data)
+                    new_data = step.transform(data)
                 else:
                     raise AttributeError(f"Step '{name}' lacks predict or transform")
+                if new_data.shape != data.shape:
+                    raise ValueError(
+                        f"Shape mismatch after step '{name}': {new_data.shape} vs {data.shape}"
+                    )
+                data = new_data
             except Exception as e:
                 raise RuntimeError(f"Error in pipeline step '{name}': {str(e)}") from e
         return data
@@ -232,7 +265,8 @@ def grid_search(
 ) -> dict[str, Any]:
     """
     Grid search over parameter grid.
-    param_grid example: {'k': [10,20], 'algorithm': ['svd','als']}
+    param_grid example: {'k': [10,20], 'algorithm': ['svd','als'], 'bias': [True, False]}
+    All params in param_grid are passed as kwargs to RecommenderSystem.fit().
     """
     from itertools import product
 
@@ -249,7 +283,10 @@ def grid_search(
             splits = train_test_split_ratings(matrix, 1 / cv, random_state)
             train, test = splits[0] if splits else (matrix.copy(), [])
             rec = RecommenderSystem(algorithm=param_dict.get("algorithm", "svd"))
-            rec.fit(train, k=param_dict.get("k", 10))
+            fit_kwargs = {
+                k: v for k, v in param_dict.items() if k not in ("algorithm", "k")
+            }
+            rec.fit(train, k=param_dict.get("k", 10), **fit_kwargs)
             preds = rec.predict(train)
             if not test:
                 score = 0.0
