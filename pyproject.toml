@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "vector_recsys_lite"
 version = "0.1.5"
-description = "🔥 Zero-dep NumPy SVD recommender + ANN benchmark (2 s on 100 k MovieLens)"
+description = "🔥 Lightweight SVD recommender for teaching and small-scale production"
 authors = ["Simbarashe Timire <stimire92@gmail.com>"]
 license = "MIT"
 readme = "README.md"
 packages = [{include = "vector_recsys_lite", from = "src"}]
-keywords = ["recommender-system", "svd", "numpy", "machine-learning", "collaborative-filtering"]
+keywords = ["recommender-system", "svd", "numpy", "machine-learning", "collaborative-filtering", "education"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
