@@ -1,45 +1,29 @@
-# Contributing to vector_recsys_lite
+# Contributing to vector-recsys-lite
 
-Thank you for your interest in contributing! 🎉
+Thanks for your interest! We welcome contributions that improve education or usability.
 
-## How to Contribute
+## Reporting Issues
 
-- Fork the repository and create your branch from `main`.
-- Make your changes with clear, descriptive commit messages.
-- Ensure your code is well-documented and type-annotated.
-- Add or update tests for any new features or bug fixes.
-- Run all tests and linting before submitting a pull request.
-- Open a pull request and describe your changes.
+1. Check existing issues
+2. Open new issue with template
+3. Include: description, steps to reproduce, environment
 
-## Code Style
+## Contributing Code
 
-- Use [Black](https://github.com/psf/black) for formatting.
-- Use [isort](https://pycqa.github.io/isort/) for import sorting.
-- Use [ruff](https://github.com/astral-sh/ruff) for linting.
-- Type annotations are required for all public functions.
-- Docstrings are required for all public functions and classes.
+1. Fork repo
+2. Create branch: `git checkout -b feat/my-feature`
+3. Develop with `make dev`
+4. Test: `make test`
+5. Lint: `make lint`
+6. Commit: `git commit -m 'feat: add my feature'`
+7. Push: `git push origin feat/my-feature`
+8. Open PR with clear title/description
 
-## Running Tests and Linting
+## Code Standards
+- Python 3.9+
+- Black formatting
+- Type hints
+- Tests for new features (>80% coverage)
+- Docstrings in Google style
 
-```bash
-make lint
-make test
-```
-
-Or, with Poetry:
-
-```bash
-poetry run pytest
-poetry run black --check src/ tests/
-poetry run isort --check src/ tests/
-poetry run ruff src/ tests/
-```
-
-## Pull Request Checklist
-
-- [ ] All tests pass
-- [ ] Linting passes
-- [ ] Code is documented and type-annotated
-- [ ] PR description is clear and complete
-
-Thank you for helping make this project better! 🚀
+See [developer_guide.md](docs/developer_guide.md) for more.

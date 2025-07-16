@@ -23,7 +23,22 @@ release = "0.1.4"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "myst_parser",  # For Markdown support
 ]
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
+}
+
+html_theme_options = {
+    "navigation_depth": 4,
+    "show_nav_level": 2,
+    "collapse_navigation": False,
+}
 
 templates_path = ["_templates"]
 exclude_patterns = []
