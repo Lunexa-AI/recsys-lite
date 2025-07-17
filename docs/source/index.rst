@@ -1,4 +1,4 @@
-vector-recsys-lite Documentation
+recsys-lite Documentation
 ===========================
 
 Welcome to the official documentation.

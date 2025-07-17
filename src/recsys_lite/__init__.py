@@ -1,5 +1,5 @@
 """
-vector_recsys_lite: Fast, zero-dep SVD recommender + ANN benchmark (2 s on 100k MovieLens)
+recsys_lite: Fast, zero-dep SVD recommender + ANN benchmark (2 s on 100k MovieLens)
 
 Features:
 - Zero dependencies (NumPy only)

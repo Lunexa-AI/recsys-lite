@@ -1,10 +1,10 @@
 # Deployment Guide for Small Apps
 
-This guide shows how to deploy vector-recsys-lite in production for small-scale apps (<10k users/items). It's designed to be simple and resource-efficient.
+This guide shows how to deploy recsys-lite in production for small-scale apps (<10k users/items). It's designed to be simple and resource-efficient.
 
 ## Quick Setup
 
-1. **Install**: `pip install vector_recsys_lite`
+1. **Install**: `pip install recsys_lite`
 2. **Train Model**: Use CLI or API to create a model.pkl
 3. **Deploy**: Use the `deploy` command or integrate manually
 
@@ -12,10 +12,10 @@ This guide shows how to deploy vector-recsys-lite in production for small-scale 
 
 ```bash
 # Train a model (example)
-vector-recsys predict ratings.csv --output model.pkl  # Actually save via API
+recsys predict ratings.csv --output model.pkl  # Actually save via API
 
 # Generate API
-vector-recsys deploy model.pkl --port 8000
+recsys deploy model.pkl --port 8000
 
 # Run
 uvicorn deploy_app:app --port 8000
@@ -29,7 +29,7 @@ Access http://localhost:8000/recommend/0 for recs.
 
 ```python
 from fastapi import FastAPI
-from vector_recsys_lite import RecommenderSystem
+from recsys_lite import RecommenderSystem
 import numpy as np
 
 app = FastAPI()
@@ -50,7 +50,7 @@ For offline recommendations:
 
 ```python
 import pandas as pd
-from vector_recsys_lite import RecommenderSystem
+from recsys_lite import RecommenderSystem
 
 rec = RecommenderSystem().fit(ratings_df.values)
 recs = rec.recommend(ratings_df.values)

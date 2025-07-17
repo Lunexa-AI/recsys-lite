@@ -1,12 +1,12 @@
 API Reference
 =============
 
-This page details the public API of vector-recsys-lite.
+This page details the public API of recsys-lite.
 
 Core Algorithms
 ---------------
 
-.. automodule:: vector_recsys_lite.algo
+.. automodule:: recsys_lite.algo
    :members:
    :undoc-members:
    :show-inheritance:
@@ -14,7 +14,7 @@ Core Algorithms
 I/O Utilities
 -------------
 
-.. automodule:: vector_recsys_lite.io
+.. automodule:: recsys_lite.io
    :members:
    :undoc-members:
    :show-inheritance:
@@ -22,7 +22,7 @@ I/O Utilities
 CLI
 ---
 
-.. automodule:: vector_recsys_lite.cli
+.. automodule:: recsys_lite.cli
    :members:
    :undoc-members:
    :show-inheritance:
@@ -30,7 +30,7 @@ CLI
 Explanation Tools
 -----------------
 
-.. automodule:: vector_recsys_lite.explain
+.. automodule:: recsys_lite.explain
    :members:
    :undoc-members:
    :show-inheritance:
@@ -38,7 +38,7 @@ Explanation Tools
 Utilities
 ---------
 
-.. automodule:: vector_recsys_lite.utils
+.. automodule:: recsys_lite.utils
    :members:
    :undoc-members:
    :show-inheritance:

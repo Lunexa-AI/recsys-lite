@@ -1,28 +1,25 @@
 
-[![CI](https://github.com/Lunexa-AI/vector-recsys-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/Lunexa-AI/vector-recsys-lite/actions)
+[![CI](https://github.com/Lunexa-AI/recsys-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/Lunexa-AI/recsys-lite/actions)
 [![Python](https://img.shields.io/badge/python->=3.9-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![PyPI version](https://img.shields.io/pypi/v/vector-recsys-lite.svg)](https://pypi.org/project/vector-recsys-lite/)
+[![PyPI version](https://img.shields.io/pypi/v/recsys-lite.svg)](https://pypi.org/project/recsys-lite/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://pre-commit.com/)
 
 **Lightweight recommender for teaching and small-scale production.**
 
-## 🌟 Why Use vector-recsys-lite?
+## Why recsys-lite?
 
-- **Purpose-built for teaching and learning:**
-  Interactive CLI, educator guides, and Jupyter demos—no need to reinvent the wheel for every class or workshop.
-- **Robust, tested, and production-ready:**
-  Handles edge cases, bad input, and large/sparse data gracefully—unlike most one-off scripts.
-- **Resource-light and offline-ready:**
-  <50MB install, runs on 2GB RAM, and works without internet after install.
-- **Simple, reproducible production:**
-  One-command API deployment, clean CLI, and Docker support.
-- **Multiple algorithms, modern tooling:**
-  SVD, ALS (implicit), KNN (cosine), bias handling, chunked processing, and more.
-- **Extensible and community-focused:**
-  Easy to add new datasets, metrics, or algorithms. Contributor-friendly with templates and guides.
-- **World-class documentation and examples:**
-  Notebooks, educator guides, and API docs for fast onboarding.
+**recsys-lite** is a small, teach-first recommender toolkit that runs in constrained environments and scales to real data. Use it from the CLI or Python to load interaction data, train classic recommenders, evaluate, and export results reproducibly.
+
+### Highlights
+
+- **Teach‑first UX** – Interactive CLI, instructor notes, and Jupyter demos so classes and workshops can get hands‑on quickly.
+- **Solid data handling** – Validates schema, tolerates missing / malformed rows, supports dense or sparse input, and streams large CSV/Parquet files in chunks.
+- **Runs small** – Minimal deps; installs under ~50 MB* and trains sample models in <2 GB RAM; works offline once wheels are cached.
+- **Multiple algorithms** – SVD, implicit ALS, cosine KNN, global & per‑user bias, plus pluggable metrics and top‑N recommenders.
+- **CLI ⇄ API parity** – Same operations available programmatically and via `recsys-lite` commands; good for CI and teaching.
+- **Reproducible deploy** – Docker image and `serve` command expose a REST endpoint for scoring & top‑N; versioned model artifacts.
+- **Docs & examples** – Notebooks, educator guides, and generated API reference for fast onboarding.
 
 ---
 
@@ -48,13 +45,13 @@ recommendations = top_n(reconstructed, ratings, n=2)
 print(recommendations)
 ```
 
-CLI: `vector-recsys --help`
+CLI: `recsys --help`
 
 ## 🎓 For Educators & Students
 
 Teach recommendation systems without fancy hardware.
 
-- **Interactive Mode**: `vector-recsys teach --concept svd` (prompts, examples)
+- **Interactive Mode**: `recsys teach --concept svd` (prompts, examples)
 - **Notebooks**: `examples/svd_math_demo.ipynb` (math breakdowns, plots)
 - **Low-Resource Demos**: Generate data and run in <1s
 
@@ -64,7 +61,7 @@ Full guide: [docs/educator_guide.md](docs/educator_guide.md)
 
 Build production recommenders for <10k users/items.
 
-- **Deploy API**: `vector-recsys deploy model.pkl`
+- **Deploy API**: `recsys deploy model.pkl`
 - **Offline Install**: Download wheel, install via USB
 - **Resource Efficient**: Sparse matrices for low memory
 
@@ -78,7 +75,7 @@ Extend or contribute easily.
 
 - **API**: Clean, typed functions (svd_reconstruct, RecommenderSystem)
 - **Contributing**: `make dev` setup, tests, linting
-- **Benchmarks**: `vector-recsys benchmark`
+- **Benchmarks**: `recsys benchmark`
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [API Reference](#🔧-api-reference).
 

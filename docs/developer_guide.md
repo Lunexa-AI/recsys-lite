@@ -1,10 +1,10 @@
 # Developer Guide
 
-This guide is for developers extending or contributing to vector-recsys-lite. It assumes Python knowledge.
+This guide is for developers extending or contributing to recsys-lite. It assumes Python knowledge.
 
 ## 🏗️ Project Structure
 
-- `src/vector_recsys_lite/`: Core code
+- `src/recsys_lite/`: Core code
   - `algo.py`: SVD and recommendation logic
   - `cli.py`: Command-line interface
   - `explain.py`: Educational tools

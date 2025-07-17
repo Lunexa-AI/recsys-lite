@@ -47,5 +47,5 @@ jobs:
           poetry install --with dev
       - name: Run benchmark smoke test
         run: |
-          poetry run vector-recsys sample test_bench.csv --users 10 --items 10
-          poetry run vector-recsys benchmark test_bench.csv --rank 2 --iterations 1
+          poetry run recsys sample test_bench.csv --users 10 --items 10
+          poetry run recsys benchmark test_bench.csv --rank 2 --iterations 1

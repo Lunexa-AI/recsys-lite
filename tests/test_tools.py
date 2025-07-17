@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from vector_recsys_lite import RecommenderSystem
-from vector_recsys_lite.tools import (
+from recsys_lite import RecommenderSystem
+from recsys_lite.tools import (
     RecsysPipeline,
     grid_search,
     load_toy_dataset,
@@ -146,7 +146,7 @@ def test_grid_search_extra_params():
 
 
 def test_load_pretrained_model():
-    from vector_recsys_lite.tools import load_pretrained_model
+    from recsys_lite.tools import load_pretrained_model
 
     rec = load_pretrained_model("tiny_svd")
     assert rec.is_fitted()
@@ -156,7 +156,7 @@ def test_load_pretrained_model():
 
 
 def test_intra_list_diversity_and_coverage():
-    from vector_recsys_lite.tools import coverage, intra_list_diversity
+    from recsys_lite.tools import coverage, intra_list_diversity
 
     recs = [[1, 2, 3], [2, 3, 4]]
     feats = np.eye(5)

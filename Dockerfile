@@ -37,7 +37,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import vector_recsys_lite; print('OK')" || exit 1
 
 # Default command
-ENTRYPOINT ["env", "PYTHONPATH=/app/packages/vector_recsys_lite/src", "poetry", "run", "vector-recsys"]
+ENTRYPOINT ["env", "PYTHONPATH=/app/packages/recsys_lite/src", "poetry", "run", "recsys"]
 CMD ["--help"]
 
 # Labels

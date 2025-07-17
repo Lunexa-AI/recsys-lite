@@ -1,5 +1,5 @@
 # mypy: disable-error-code=unreachable
-"""Command-line interface for vector_recsys_lite."""
+"""Command-line interface for recsys_lite."""
 
 from __future__ import annotations
 
@@ -60,9 +60,9 @@ def predict(
     using truncated SVD matrix factorization.
 
     Examples:
-        vector-recsys predict ratings.csv
-        vector-recsys predict ratings.csv --rank 20 --top-n 5
-        vector-recsys predict ratings.csv --output recs.csv --metrics
+        recsys predict ratings.csv
+        recsys predict ratings.csv --rank 20 --top-n 5
+        recsys predict ratings.csv --output recs.csv --metrics
     """
     try:
         with Progress(
@@ -194,8 +194,8 @@ def benchmark(
     and recommendation generation.
 
     Examples:
-        vector-recsys benchmark ratings.csv
-        vector-recsys benchmark ratings.csv --rank 100 --iterations 3
+        recsys benchmark ratings.csv
+        recsys benchmark ratings.csv --rank 100 --iterations 3
     """
     try:
         console.print(
@@ -232,8 +232,8 @@ def sample(
     Useful for testing and development.
 
     Examples:
-        vector-recsys sample test_ratings.csv
-        vector-recsys sample large_ratings.csv --users 1000 --items 200 --sparsity 0.9
+        recsys sample test_ratings.csv
+        recsys sample large_ratings.csv --users 1000 --items 200 --sparsity 0.9
     """
     try:
         console.print("Generating sample rating matrix...")
@@ -311,7 +311,7 @@ def deploy(
     script = f"""
 from fastapi import FastAPI
 import numpy as np
-from vector_recsys_lite import RecommenderSystem
+from recsys_lite import RecommenderSystem
 
 app = FastAPI()
 rec = RecommenderSystem.load('{model}')
@@ -344,8 +344,8 @@ def teach(
     Interactive teaching mode for learning recommender system concepts.
 
     Examples:
-        vector-recsys teach --concept svd
-        vector-recsys teach --concept matrix
+        recsys teach --concept svd
+        recsys teach --concept matrix
     """
     console.print(f"[bold cyan]Teaching Mode: {concept.upper()}[/bold cyan]\n")
 

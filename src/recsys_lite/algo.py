@@ -454,7 +454,7 @@ def svd_reconstruct(
     Examples
     --------
     >>> import numpy as np
-    >>> from vector_recsys_lite import svd_reconstruct
+    >>> from recsys_lite import svd_reconstruct
     >>>
     >>> # Create sample rating matrix
     >>> ratings = np.array([[5, 3, 0, 1], [0, 0, 4, 5]], dtype=np.float32)

@@ -1,5 +1,5 @@
 """
-ML tooling utilities for vector-recsys-lite.
+ML tooling utilities for recsys-lite.
 """
 
 from itertools import product

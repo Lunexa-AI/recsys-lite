@@ -1,4 +1,4 @@
-# Developer-friendly Makefile for vector_recsys_lite
+# Developer-friendly Makefile for recsys_lite
 
 .PHONY: dev lint test coverage precommit docker-build docker-test ci
 
@@ -20,11 +20,11 @@ lint:
 
 # Run all tests with coverage
 test:
-	poetry run pytest --cov=vector_recsys_lite --cov-report=term-missing --cov-fail-under=75
+	poetry run pytest --cov=recsys_lite --cov-report=term-missing --cov-fail-under=75
 
 # Show coverage report, fail if below threshold
 coverage:
-	poetry run pytest --cov=src/vector_recsys_lite --cov-report=term-missing --cov-fail-under=75
+	poetry run pytest --cov=src/recsys_lite --cov-report=term-missing --cov-fail-under=75
 
 # Run all pre-commit hooks
 precommit:
@@ -32,12 +32,12 @@ precommit:
 
 # Build Docker image
 docker-build:
-	docker build -t vector-recsys-lite:latest .
+	docker build -t recsys-lite:latest .
 
 # Run tests inside Docker container
 # Note: Use --entrypoint poetry to ensure dev dependencies (pytest) are available
 docker-test:
-	docker run --rm --entrypoint poetry vector-recsys-lite:latest run pytest --cov=vector_recsys_lite --cov-report=term-missing --cov-fail-under=75
+	docker run --rm --entrypoint poetry recsys-lite:latest run pytest --cov=recsys_lite --cov-report=term-missing --cov-fail-under=75
 
 # Simulate full CI locally
 ci: lint test coverage docker-build docker-test

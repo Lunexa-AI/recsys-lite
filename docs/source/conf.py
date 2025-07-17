@@ -21,7 +21,7 @@ if sys.version_info >= (3, 13):
 sys.path.insert(0, os.path.abspath("../../src"))
 
 
-project = "vector_recsys_lite"
+project = "recsys_lite"
 copyright = "2025, Simbarashe Timire"
 author = "Simbarashe Timire"
 release = "0.1.4"

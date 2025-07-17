@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "recsys_lite"
-version = "0.1.8"
-description = "🔥 Lightweight recommenders for teaching and small-scale production"
+version = "1.0.0"
+description = "🔥 Lightweight recommender for teaching and small-scale production"
 authors = ["Simbarashe Timire <stimire92@gmail.com>"]
 license = "MIT"
 readme = "README.md"
