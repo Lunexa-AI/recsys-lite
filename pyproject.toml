@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vector_recsys_lite"
-version = "0.1.7"
+version = "0.1.8"
 description = "🔥 Lightweight recommenders for teaching and small-scale production"
 authors = ["Simbarashe Timire <stimire92@gmail.com>"]
 license = "MIT"

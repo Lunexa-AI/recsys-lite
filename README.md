@@ -1,4 +1,3 @@
-# vector_recsys_lite 🧊
 
 [![CI](https://github.com/Lunexa-AI/vector-recsys-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/Lunexa-AI/vector-recsys-lite/actions)
 [![Python](https://img.shields.io/badge/python->=3.9-blue.svg)](https://python.org)
@@ -384,8 +383,5 @@ make docker-test
 # 7. Simulate the full CI pipeline (lint, test, coverage, Docker)
 make ci
 ```
-
-- All commands work on Linux, macOS, and CI.
-- See CONTRIBUTING.md for more details.
 
 <!-- Trigger CI: workflow file updated -->
