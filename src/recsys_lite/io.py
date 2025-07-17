@@ -661,7 +661,7 @@ def save_ratings(
 
     Examples
     --------
-    >>> from vector_recsys_lite import save_ratings
+    >>> from recsys_lite import save_ratings
     >>>
     >>> # Save to CSV
     >>> save_ratings(matrix, "ratings.csv")
@@ -718,7 +718,7 @@ def create_sample_ratings(
 
     Examples
     --------
-    >>> from vector_recsys_lite import create_sample_ratings
+    >>> from recsys_lite import create_sample_ratings
     >>>
     >>> # Create a small sample matrix
     >>> ratings = create_sample_ratings(10, 5, sparsity=0.5)

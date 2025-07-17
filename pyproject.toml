@@ -1,11 +1,11 @@
 [tool.poetry]
-name = "vector_recsys_lite"
-version = "0.1.8"
+name = "recsys_lite"
+version = "1.0.0"
 description = "🔥 Lightweight recommender for teaching and small-scale production"
 authors = ["Simbarashe Timire <stimire92@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "vector_recsys_lite", from = "src"}]
+packages = [{include = "recsys_lite", from = "src"}]
 keywords = ["recommender-system", "svd", "numpy", "machine-learning", "collaborative-filtering", "education"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -22,7 +22,7 @@ classifiers = [
 ]
 
 [tool.poetry.scripts]
-vector-recsys = "vector_recsys_lite.cli:cli"
+recsys = "recsys_lite.cli:cli"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"

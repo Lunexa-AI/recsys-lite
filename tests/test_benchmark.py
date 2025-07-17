@@ -10,7 +10,7 @@ import pytest
 from rich.table import Table
 from scipy import sparse
 
-from vector_recsys_lite.benchmark import (
+from recsys_lite.benchmark import (
     BenchmarkSuite,
     create_benchmark_dataset,
     quick_benchmark,
@@ -450,7 +450,7 @@ def test_generate_dataset_report_mixed() -> None:
 
 
 def test_run_algorithm_benchmark_unknown_algorithm():
-    from vector_recsys_lite.benchmark import BenchmarkSuite
+    from recsys_lite.benchmark import BenchmarkSuite
 
     suite = BenchmarkSuite()
     matrix = np.random.rand(5, 5).astype(np.float32)
@@ -469,7 +469,7 @@ def test_run_algorithm_benchmark_unknown_algorithm():
 
 
 def test_benchmark_suite_save_results_file_error(tmp_path):
-    from vector_recsys_lite.benchmark import BenchmarkSuite
+    from recsys_lite.benchmark import BenchmarkSuite
 
     suite = BenchmarkSuite(output_dir=tmp_path)
     # Simulate a directory that cannot be written to

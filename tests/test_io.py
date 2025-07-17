@@ -9,14 +9,14 @@ import pandas as pd
 import pytest
 from scipy import sparse
 
-from vector_recsys_lite.io import (
+from recsys_lite.io import (
     DataLoader,
     _validate_identifier,
     create_sample_ratings,
     load_ratings,
     save_ratings,
 )
-from vector_recsys_lite.utils import as_dense
+from recsys_lite.utils import as_dense
 
 
 class TestLoadRatings:

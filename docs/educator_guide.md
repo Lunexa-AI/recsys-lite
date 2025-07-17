@@ -1,14 +1,14 @@
 # Educator & Student Guide
 
-Welcome! This guide helps you use vector-recsys-lite for teaching recommendation systems in classrooms with limited resources.
+Welcome! This guide helps you use recsys-lite for teaching recommendation systems in classrooms with limited resources.
 
 ## Quick Setup
 
 1. **Install** (one-time, ~5 min):
-   - With internet: `pip install vector_recsys_lite`
+   - With internet: `pip install recsys_lite`
    - Offline: Download wheel on good connection, transfer via USB, `pip install <wheel>`
 
-2. **Test**: `vector-recsys --help` (should show commands)
+2. **Test**: `recsys --help` (should show commands)
 
 3. **For classrooms**: Share installed package via USB/external drive.
 
@@ -18,19 +18,19 @@ Welcome! This guide helps you use vector-recsys-lite for teaching recommendation
 Use interactive mode:
 
 ```bash
-vector-recsys teach --concept matrix  # Explains user-item matrix
-vector-recsys teach --concept svd     # SVD breakdown with example
-vector-recsys teach --concept als     # ALS (implicit feedback) demo
-vector-recsys teach --concept knn     # KNN (similarity) demo
+recsys teach --concept matrix  # Explains user-item matrix
+recsys teach --concept svd     # SVD breakdown with example
+recsys teach --concept als     # ALS (implicit feedback) demo
+recsys teach --concept knn     # KNN (similarity) demo
 ```
 
 Follow prompts to generate examples.
 
 ### 2. Hands-on Lab (30 min)
-- Generate data: `vector-recsys sample class_data.csv --users 5 --items 4`
-- Predict (SVD): `vector-recsys predict class_data.csv --explain`
-- Predict (ALS): `vector-recsys predict class_data.csv --algorithm als --explain`
-- Predict (KNN): `vector-recsys predict class_data.csv --algorithm knn --explain`
+- Generate data: `recsys sample class_data.csv --users 5 --items 4`
+- Predict (SVD): `recsys predict class_data.csv --explain`
+- Predict (ALS): `recsys predict class_data.csv --algorithm als --explain`
+- Predict (KNN): `recsys predict class_data.csv --algorithm knn --explain`
 - Discuss output: Shows matrix samples, math, and bias terms.
 
 ### 3. Notebook Session (if Jupyter available)
@@ -42,15 +42,15 @@ jupyter notebook svd_math_demo.ipynb
 - Try ALS and KNN in Python:
 
 ```python
-from vector_recsys_lite import RecommenderSystem
+from recsys_lite import RecommenderSystem
 ratings = ...  # your matrix
 als = RecommenderSystem(algorithm="als").fit(ratings, k=2)
 knn = RecommenderSystem(algorithm="knn").fit(ratings, k=2)
 ```
 
 ## Low-Resource Tips
-- **Old hardware**: Use sparse mode: `vector-recsys predict --use-sparse`
-- **Large matrices**: Use chunked SVD: `vector-recsys predict --use-sparse` or in Python with `svd_reconstruct(..., use_sparse=True)`
+- **Old hardware**: Use sparse mode: `recsys predict --use-sparse`
+- **Large matrices**: Use chunked SVD: `recsys predict --use-sparse` or in Python with `svd_reconstruct(..., use_sparse=True)`
 - **No internet**: All features work offline after install
 - **Large classes**: Pre-install on lab computers
 - **Extensions**: Have students modify `RecommenderSystem` class, try ALS/KNN/bias options

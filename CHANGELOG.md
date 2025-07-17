@@ -3,12 +3,17 @@
 All notable changes to this project will be documented in this file.
 
 ## [0.1.8] - 2024-07-16
-### Fixed
-- Resolved PyPI publishing issues and improved package metadata
-
 ### Changed
+- **BREAKING CHANGE**: Renamed package from `vector_recsys_lite` to `recsys_lite`
+- Updated all import statements and CLI commands
+- Resolved PyPI publishing issues and improved package metadata
 - Enhanced documentation and README structure
 - Improved package description and user experience
+
+**Migration Guide:**
+- Update imports: `from vector_recsys_lite import ...` → `from recsys_lite import ...`
+- Update CLI: `vector-recsys` → `recsys`
+- Update installation: `pip install vector_recsys_lite` → `pip install recsys_lite`
 
 ## [0.1.5] - 2024-07-14
 ### Changed

@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from scipy import sparse
 
-from vector_recsys_lite.algo import (
+from recsys_lite.algo import (
     RecommenderSystem,
     benchmark_algorithm,
     compute_mae,
@@ -15,8 +15,8 @@ from vector_recsys_lite.algo import (
     svd_reconstruct,
     top_n,
 )
-from vector_recsys_lite.tools import grid_search, train_test_split_ratings
-from vector_recsys_lite.utils import as_dense
+from recsys_lite.tools import grid_search, train_test_split_ratings
+from recsys_lite.utils import as_dense
 
 
 class TestSVDReconstruct:
@@ -742,7 +742,7 @@ class TestChunkedSVD:
 def test_svd_reconstruct_invalid_sparse(monkeypatch):
     import scipy.sparse
 
-    from vector_recsys_lite.algo import svd_reconstruct
+    from recsys_lite.algo import svd_reconstruct
 
     mat = scipy.sparse.csr_matrix((0, 0), dtype=np.float32)
     # k too large for sparse
@@ -754,7 +754,7 @@ def test_svd_reconstruct_invalid_sparse(monkeypatch):
 
 
 def test_svd_reconstruct_runtime_error(monkeypatch):
-    from vector_recsys_lite.algo import svd_reconstruct
+    from recsys_lite.algo import svd_reconstruct
 
     # Patch np.linalg.svd to raise
     def fake_svd(*a, **k):
@@ -767,7 +767,7 @@ def test_svd_reconstruct_runtime_error(monkeypatch):
 
 
 def test_top_n_all_rated():
-    from vector_recsys_lite.algo import top_n
+    from recsys_lite.algo import top_n
 
     mat = np.ones((2, 3), dtype=np.float32)
     est = np.ones((2, 3), dtype=np.float32)
@@ -776,7 +776,7 @@ def test_top_n_all_rated():
 
 
 def test_top_n_zero_n():
-    from vector_recsys_lite.algo import top_n
+    from recsys_lite.algo import top_n
 
     mat = np.zeros((2, 3), dtype=np.float32)
     est = np.ones((2, 3), dtype=np.float32)
@@ -785,7 +785,7 @@ def test_top_n_zero_n():
 
 
 def test_compute_rmse_all_zero():
-    from vector_recsys_lite.algo import compute_rmse
+    from recsys_lite.algo import compute_rmse
 
     pred = np.zeros((2, 3), dtype=np.float32)
     actual = np.zeros((2, 3), dtype=np.float32)
@@ -793,7 +793,7 @@ def test_compute_rmse_all_zero():
 
 
 def test_compute_mae_all_zero():
-    from vector_recsys_lite.algo import compute_mae
+    from recsys_lite.algo import compute_mae
 
     pred = np.zeros((2, 3), dtype=np.float32)
     actual = np.zeros((2, 3), dtype=np.float32)
@@ -801,7 +801,7 @@ def test_compute_mae_all_zero():
 
 
 def test_predict_unfitted():
-    from vector_recsys_lite.algo import RecommenderSystem
+    from recsys_lite.algo import RecommenderSystem
 
     rec = RecommenderSystem()
     with pytest.raises(RuntimeError):
@@ -809,7 +809,7 @@ def test_predict_unfitted():
 
 
 def test_predict_model_none():
-    from vector_recsys_lite.algo import RecommenderSystem
+    from recsys_lite.algo import RecommenderSystem
 
     rec = RecommenderSystem()
     rec._fitted = True
@@ -819,7 +819,7 @@ def test_predict_model_none():
 
 
 def test_recommend_invalid_n():
-    from vector_recsys_lite.algo import RecommenderSystem
+    from recsys_lite.algo import RecommenderSystem
 
     rec = RecommenderSystem()
     rec._fitted = True
@@ -829,7 +829,7 @@ def test_recommend_invalid_n():
 
 
 def test_recommender_unsupported_algorithm():
-    from vector_recsys_lite.algo import RecommenderSystem
+    from recsys_lite.algo import RecommenderSystem
 
     with pytest.raises(ValueError):
         RecommenderSystem(algorithm="unknown")
@@ -838,7 +838,7 @@ def test_recommender_unsupported_algorithm():
 def test_svd_reconstruct_invalid_k():
     import numpy as np
 
-    from vector_recsys_lite.algo import svd_reconstruct
+    from recsys_lite.algo import svd_reconstruct
 
     mat = np.ones((3, 3), dtype=np.float32)
     with pytest.raises(ValueError):
@@ -850,7 +850,7 @@ def test_svd_reconstruct_invalid_k():
 def test_svd_reconstruct_1d_empty():
     import numpy as np
 
-    from vector_recsys_lite.algo import svd_reconstruct
+    from recsys_lite.algo import svd_reconstruct
 
     with pytest.raises(ValueError):
         svd_reconstruct(np.array([1, 2, 3], dtype=np.float32))
@@ -861,7 +861,7 @@ def test_svd_reconstruct_1d_empty():
 def test_svd_reconstruct_svd_failure(monkeypatch):
     import numpy as np
 
-    from vector_recsys_lite.algo import svd_reconstruct
+    from recsys_lite.algo import svd_reconstruct
 
     def fake_svd(*a, **k):
         raise np.linalg.LinAlgError("fail")
@@ -875,7 +875,7 @@ def test_svd_reconstruct_svd_failure(monkeypatch):
 def test_top_n_edge_cases():
     import numpy as np
 
-    from vector_recsys_lite.algo import top_n
+    from recsys_lite.algo import top_n
 
     # All items rated
     mat = np.ones((2, 3), dtype=np.float32)
@@ -890,7 +890,7 @@ def test_top_n_edge_cases():
 def test_compute_rmse_mae_shape_mismatch():
     import numpy as np
 
-    from vector_recsys_lite.algo import compute_mae, compute_rmse
+    from recsys_lite.algo import compute_mae, compute_rmse
 
     pred = np.ones((2, 2), dtype=np.float32)
     actual = np.ones((2, 3), dtype=np.float32)
@@ -903,7 +903,7 @@ def test_compute_rmse_mae_shape_mismatch():
 def test_compute_rmse_shape_mismatch():
     import numpy as np
 
-    from vector_recsys_lite.algo import compute_rmse
+    from recsys_lite.algo import compute_rmse
 
     a = np.zeros((2, 2))
     b = np.zeros((3, 2))
@@ -916,7 +916,7 @@ def test_compute_rmse_shape_mismatch():
 def test_compute_rmse_nan_inf():
     import numpy as np
 
-    from vector_recsys_lite.algo import compute_rmse
+    from recsys_lite.algo import compute_rmse
 
     a = np.array([[1.0, float("nan")]])
     b = np.array([[1.0, 2.0]])
@@ -932,7 +932,7 @@ def test_compute_rmse_nan_inf():
 def test_compute_rmse_empty_mask():
     import numpy as np
 
-    from vector_recsys_lite.algo import compute_rmse
+    from recsys_lite.algo import compute_rmse
 
     a = np.zeros((2, 2))
     b = np.zeros((2, 2))
@@ -942,7 +942,7 @@ def test_compute_rmse_empty_mask():
 def test_compute_mae_shape_mismatch():
     import numpy as np
 
-    from vector_recsys_lite.algo import compute_mae
+    from recsys_lite.algo import compute_mae
 
     a = np.zeros((2, 2))
     b = np.zeros((3, 2))
@@ -955,7 +955,7 @@ def test_compute_mae_shape_mismatch():
 def test_compute_mae_nan_inf():
     import numpy as np
 
-    from vector_recsys_lite.algo import compute_mae
+    from recsys_lite.algo import compute_mae
 
     a = np.array([[1.0, float("nan")]])
     b = np.array([[1.0, 2.0]])
@@ -971,7 +971,7 @@ def test_compute_mae_nan_inf():
 def test_compute_mae_empty_mask():
     import numpy as np
 
-    from vector_recsys_lite.algo import compute_mae
+    from recsys_lite.algo import compute_mae
 
     a = np.zeros((2, 2))
     b = np.zeros((2, 2))
@@ -1016,7 +1016,7 @@ def test_grid_search():
 def test_ascii_heatmap_and_visualize_svd():
     import numpy as np
 
-    from vector_recsys_lite.explain import ascii_heatmap, visualize_svd
+    from recsys_lite.explain import ascii_heatmap, visualize_svd
 
     mat = np.array([[1, 2], [3, 4]], dtype=np.float32)
     # ASCII only

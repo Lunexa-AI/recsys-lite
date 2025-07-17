@@ -1,4 +1,4 @@
-"""Performance benchmarking and profiling for vector_recsys_lite.
+"""Performance benchmarking and profiling for recsys_lite.
 
 This module provides comprehensive benchmarking tools for evaluating algorithm
 performance, memory usage, and accuracy across different datasets and configurations.

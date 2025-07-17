@@ -1,4 +1,4 @@
-# Contributing to vector-recsys-lite
+# Contributing to recsys-lite
 
 Thanks for your interest! We welcome contributions that improve education or usability.
 
@@ -10,7 +10,7 @@ Thanks for your interest! We welcome contributions that improve education or usa
 - **CLI polish**: Improve help messages, error handling, or add new CLI options.
 - **Docs and templates**: Refine README, CONTRIBUTING, or GitHub issue/PR templates.
 
-See [issues](https://github.com/Lunexa-AI/vector-recsys-lite/issues) for more ideas!
+See [issues](https://github.com/Lunexa-AI/recsys-lite/issues) for more ideas!
 
 ## Reporting Issues
 
