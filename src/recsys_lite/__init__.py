@@ -12,7 +12,7 @@ try:
     from importlib.metadata import PackageNotFoundError, version
 
     try:
-        __version__ = version("vector_recsys_lite")
+        __version__ = version("recsys_lite")
     except PackageNotFoundError:
         __version__ = "unknown"
 except ImportError:

@@ -31,7 +31,7 @@
 ### Installation
 
 ```bash
-pip install vector_recsys_lite
+pip install recsys_lite
 ```
 
 Offline: See guide below.
@@ -40,7 +40,7 @@ Offline: See guide below.
 
 ```python
 import numpy as np
-from vector_recsys_lite import svd_reconstruct, top_n
+from recsys_lite import svd_reconstruct, top_n
 
 ratings = np.array([[5, 3, 0, 1], [0, 0, 4, 5]], dtype=np.float32)
 reconstructed = svd_reconstruct(ratings, k=2)
@@ -86,7 +86,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [API Reference](#🔧-api-reference).
 
 **ALS (Implicit Feedback)**:
 ```python
-from vector_recsys_lite import RecommenderSystem
+from recsys_lite import RecommenderSystem
 ratings = np.array([[1, 0, 1], [0, 1, 0]], dtype=np.float32)  # binary implicit
 model = RecommenderSystem(algorithm="als")
 model.fit(ratings, k=2)
@@ -95,7 +95,7 @@ preds = model.predict(ratings)
 
 **KNN (Cosine Similarity)**:
 ```python
-from vector_recsys_lite import RecommenderSystem
+from recsys_lite import RecommenderSystem
 ratings = np.array([[5, 3, 0], [0, 0, 4]], dtype=np.float32)
 model = RecommenderSystem(algorithm="knn")
 model.fit(ratings, k=2)
@@ -104,7 +104,7 @@ preds = model.predict(ratings)
 
 **Bias Handling (SVD)**:
 ```python
-from vector_recsys_lite import RecommenderSystem
+from recsys_lite import RecommenderSystem
 ratings = np.array([[5, 3, 0], [0, 0, 4]], dtype=np.float32)
 model = RecommenderSystem(algorithm="svd")
 model.fit(ratings, k=2)
@@ -113,7 +113,7 @@ preds = model.predict(ratings)  # Includes global/user/item bias
 
 **Chunked SVD**:
 ```python
-from vector_recsys_lite import svd_reconstruct
+from recsys_lite import svd_reconstruct
 large_mat = np.random.rand(10000, 500)
 reconstructed = svd_reconstruct(large_mat, k=10, use_sparse=True)
 ```
@@ -134,7 +134,7 @@ train, test = train_test_split_ratings(mat, test_size=0.2)
 
 **Pipeline**:
 ```python
-from vector_recsys_lite import RecsysPipeline, RecommenderSystem
+from recsys_lite import RecsysPipeline, RecommenderSystem
 pipe = RecsysPipeline([('model', RecommenderSystem())])
 pipe.fit(mat, k=2)
 recs = pipe.recommend(mat, n=3)
@@ -282,7 +282,7 @@ class RecommenderSystem:
 
 ```python
 import pandas as pd
-from vector_recsys_lite import svd_reconstruct, top_n
+from recsys_lite import svd_reconstruct, top_n
 
 # Load ratings from a DataFrame
 ratings_df = pd.read_csv('ratings.csv', index_col=0)
@@ -298,7 +298,7 @@ print(recommendations)
 
 ```python
 from fastapi import FastAPI
-from vector_recsys_lite import svd_reconstruct, top_n
+from recsys_lite import svd_reconstruct, top_n
 import numpy as np
 
 app = FastAPI()
