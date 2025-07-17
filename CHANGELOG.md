@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.8] - 2024-07-16
+### Fixed
+- Resolved PyPI publishing issues and improved package metadata
+
+### Changed
+- Enhanced documentation and README structure
+- Improved package description and user experience
+
 ## [0.1.5] - 2024-07-14
 ### Changed
 - Major robustness and production-readiness improvements across all modules
