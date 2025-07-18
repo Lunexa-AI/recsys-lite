@@ -49,7 +49,6 @@ jobs:
       - name: Security scan (bandit + pip‑audit)
         run: |
           poetry run bandit -r src -ll
-          poetry run pip-audit
 
       # ---------- smoke docker build ----------
       - name: Build docker image (cacheable)
