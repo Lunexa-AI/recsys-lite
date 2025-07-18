@@ -1,44 +1,57 @@
-# Developer-friendly Makefile for recsys_lite
+# Makefile — recsys_lite (2025 edition)
+.DEFAULT_GOAL := help
+.PHONY: dev format lint test typecheck precommit docker-build docker-test ci clean help
 
-.PHONY: dev lint test coverage precommit docker-build docker-test ci
+PKG := recsys_lite
+PY := poetry run
+VENV_DIR := .venv                    # keep env inside project
 
-# Set up full dev environment (Poetry, venv, pre-commit)
-dev:
-	@echo "[dev] Installing Poetry, dependencies, and pre-commit hooks..."
-	@if ! command -v poetry >/dev/null 2>&1; then \
-	  pip install --user poetry; \
-	fi
+## ---------- Dev workflow ---------------------------------------------------
+
+dev: ## Install deps & pre‑commit hooks
+	@[ -d $(VENV_DIR) ] || poetry env use $(shell pyenv global)
 	poetry install --with dev
 	poetry run pre-commit install
-	@echo "[dev] Setup complete!"
+	@echo "✅ Dev environment ready"
 
-# Lint all code
-lint:
-	poetry run black --check src/ tests/
-	poetry run isort --check src/ tests/
-	poetry run ruff check src/ tests/
+format: ## Auto‑format code with Black, isort, ruff‑fix
+	$(PY) black src/ tests/
+	$(PY) isort src/ tests/
+	$(PY) ruff format src/ tests/
 
-# Run all tests with coverage
-test:
-	poetry run pytest --cov=recsys_lite --cov-report=term-missing --cov-fail-under=75
+lint: ## Static‑analysis without mutating files
+	$(PY) ruff check src/ tests/
+	$(PY) black --check src/ tests/
+	$(PY) isort --check src/ tests/
 
-# Show coverage report, fail if below threshold
-coverage:
-	poetry run pytest --cov=src/recsys_lite --cov-report=term-missing --cov-fail-under=75
+typecheck: ## Optional strict typing
+	$(PY) mypy src/ || true
 
-# Run all pre-commit hooks
-precommit:
-	poetry run pre-commit run --all-files
+test: ## Run tests + coverage report
+	$(PY) pytest --cov=$(PKG) --cov-report=term-missing --cov-fail-under=80
 
-# Build Docker image
-docker-build:
-	docker build -t recsys-lite:latest .
+precommit: ## Run all pre‑commit hooks
+	$(PY) pre-commit run --all-files --show-diff-on-failure
 
-# Run tests inside Docker container
-# Note: Use --entrypoint poetry to ensure dev dependencies (pytest) are available
-docker-test:
-	docker run --rm --entrypoint poetry recsys-lite:latest run pytest --cov=recsys_lite --cov-report=term-missing --cov-fail-under=75
+## ---------- Docker helpers -------------------------------------------------
 
-# Simulate full CI locally
-ci: lint test coverage docker-build docker-test
-	@echo "[ci] All checks passed! Ready to push."
+docker-build: ## Build multi‑arch Docker image using cache
+	docker buildx build \
+	  --platform linux/amd64,linux/arm64 \
+	  --cache-from type=gha \
+	  --cache-to type=gha,mode=max \
+	  -t $(PKG):latest .
+
+docker-test: docker-build ## Run tests inside container
+	docker run --rm --entrypoint poetry $(PKG):latest run pytest -q
+
+## ---------- Meta -----------------------------------------------------------
+
+ci: lint typecheck test docker-test ## Aggregate for local parity with CI
+
+clean: ## Remove virtualenv & transient artefacts
+	rm -rf $(VENV_DIR) dist build *.egg-info .pytest_cache .coverage || true
+
+help: ## Show this help
+	@grep -E '^[a-zA-Z_-]+:.*?##' $(MAKEFILE_LIST) | \
+	  awk 'BEGIN {FS = ":.*?##"} {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'

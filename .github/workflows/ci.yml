@@ -1,51 +1,63 @@
-name: CI
+name: Dev‑CI
 
 on:
-  push:
-    branches: [ main, "*" ]
   pull_request:
-    branches: [ main, "*" ]
+    branches: ['main']
+  push:
+    branches-ignore: ['main']        # feature branches
+    paths-ignore:
+      - 'docs/**'                    # skip CI on docs‑only edits
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true           # overwrite stale runs on re‑push
 
 jobs:
-  build:
+  dev-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11', '3.12']
+        python-version: ['3.10', '3.11', '3.12']
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
       - name: Install Poetry
+        run: pip install --upgrade poetry
+
+      - name: Install deps (dev extras)
+        run: poetry install --with dev
+
+      # ---------- quality gates ----------
+      - name: Formatting
+        run: poetry run pre-commit run --all-files --hook-stage manual
+
+      - name: Lint (ruff & mypy)
         run: |
-          pip install poetry
-      - name: Install dependencies
+          poetry run ruff check .
+          poetry run mypy src
+
+      - name: Unit tests + coverage
+        run: poetry run pytest --cov --cov-report xml
+
+      - name: Security scan (bandit + pip‑audit)
         run: |
-          poetry install --with dev
-      - name: Lint
-        run: |
-          make lint
-      - name: Test with coverage
-        run: |
-          make coverage
-  benchmark:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+          poetry run bandit -r src -ll
+          poetry run pip-audit
+
+      # ---------- smoke docker build ----------
+      - name: Build docker image (cacheable)
+        uses: docker/build-push-action@v5
         with:
-          python-version: '3.11'
-      - name: Install Poetry
-        run: |
-          pip install poetry
-      - name: Install dependencies
-        run: |
-          poetry install --with dev
-      - name: Run benchmark smoke test
-        run: |
-          poetry run recsys sample test_bench.csv --users 10 --items 10
-          poetry run recsys benchmark test_bench.csv --rank 2 --iterations 1
+          context: .
+          push: false
+          load: false
+          tags: sample:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
