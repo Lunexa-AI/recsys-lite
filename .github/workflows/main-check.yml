@@ -22,7 +22,7 @@ jobs:
           poetry install --no-root   # prod deps only
       - name: Build wheel & sdist
         run: poetry build
-      - name: Dry‑run publish (twine check)
+      - name: Dry-run publish (twine check)
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}

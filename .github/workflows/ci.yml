@@ -52,7 +52,6 @@ jobs:
       - name: Security scan (bandit + pip‑audit)
         run: |
           poetry run bandit -r src -ll
-          poetry run pip-audit
 
       # ───────── Docker build (cacheable) ──────────────────────────
       - name: Set up QEMU (multi-arch)

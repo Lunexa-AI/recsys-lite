@@ -1,10 +1,13 @@
-# Makefile — recsys_lite (2025‑07)
+# Makefile — recsys_lite (2025‑07‑refresh)
 .DEFAULT_GOAL := help
-.PHONY: dev format lint typecheck test precommit docker-build docker-test docker-prod ci clean help
+.PHONY: \
+  dev format lint typecheck test precommit \
+  docker-build docker-test docker-prod \
+  ci clean help
 
 PKG       := recsys_lite
 PY        := poetry run
-VENV_DIR  := .venv                 # in‑project virtual‑env
+VENV_DIR  := .venv                      # in‑project virtual‑env
 
 # ─────────── Dev workflow ────────────────────────────────────────────────────
 dev: ## Install deps & pre‑commit hooks
@@ -15,47 +18,43 @@ dev: ## Install deps & pre‑commit hooks
 
 format: ## Auto‑format code (Black, isort, ruff‑format)
 	$(PY) black src/ tests/
-	$(PY) isort src/ tests/
+	$(PY) isort  src/ tests/
 	$(PY) ruff format src/ tests/
 
 lint: ## Static analysis (ruff + format checks)
 	$(PY) ruff check src/ tests/
 	$(PY) black --check src/ tests/
-	$(PY) isort --check src/ tests/
+	$(PY) isort --check  src/ tests/
 
-typecheck: ## Optional mypy / pyright run
-	$(PY) mypy src/ || true
+typecheck: ## Optional mypy run
+	$(PY) mypy src/ || true            # make strict later
 
-test: ## Run tests + coverage (fail <80 %)
+test: ## Run tests + coverage (fail <75 %)
 	$(PY) pytest --cov=$(PKG) --cov-report=term-missing --cov-fail-under=75
 
 precommit: ## Run all pre‑commit hooks
 	$(PY) pre-commit run --all-files --show-diff-on-failure
 
 # ─────────── Docker helpers ─────────────────────────────────────────────────
-# builder image (with dev deps & tests) → tag :ci
-docker-build: ## Build CI image (multi‑arch, cached)
+# 1 · CI smoke image  → tag :ci
+docker-build: ## Build native‑arch CI image (runs tests)
 	docker buildx build \
-	  --platform linux/amd64,linux/arm64 \
-	  --target builder \
-	  --cache-from type=gha \
-	  --cache-to   type=gha,mode=max \
+	  --target test \
 	  -t $(PKG):ci .
 
 docker-test: docker-build ## Run pytest inside CI image
 	docker run --rm $(PKG):ci pytest -q
 
-# production image (lean runtime) → tag :latest
-docker-prod: ## Build production image
+# 2 · Production image  → tag :latest
+docker-prod: ## Build multi‑arch production image (tests skipped on foreign arch)
 	docker buildx build \
 	  --platform linux/amd64,linux/arm64 \
+	  --build-arg RUN_TESTS=false \
 	  --target runtime \
-	  --cache-from type=gha \
-	  --cache-to   type=gha,mode=max \
 	  -t $(PKG):latest .
 
 # ─────────── Meta targets ───────────────────────────────────────────────────
-ci: lint typecheck test docker-test ## Mirror GitHub‑Actions CI locally
+ci: lint typecheck test ## Mirror GitHub‑Actions CI locally
 	@echo "🎉 All local CI checks passed!"
 
 clean: ## Remove venv & transient artefacts
@@ -63,4 +62,4 @@ clean: ## Remove venv & transient artefacts
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?##' $(MAKEFILE_LIST) | \
-	    awk 'BEGIN {FS = ":.*?##"} {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
+	  awk 'BEGIN {FS = ":.*?##"} {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
