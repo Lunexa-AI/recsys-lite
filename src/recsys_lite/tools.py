@@ -169,7 +169,7 @@ def train_test_split_ratings(
     if stratified:
         # Bin by rating value
         unique_ratings = np.unique(matrix[matrix > 0])
-        test_indices = []
+        test_indices: list[Any] = []
         for val in unique_ratings:
             val_indices = np.argwhere(matrix == val)
             n_val = len(val_indices)
@@ -180,10 +180,10 @@ def train_test_split_ratings(
                 np.random.seed(random_state)
             chosen = np.random.choice(n_val, n_test_val, replace=False)
             test_indices.extend(val_indices[chosen])
-        test_indices = np.array(test_indices)
+        test_indices_arr = np.array(test_indices)
         train = matrix.copy()
         test = []
-        for i, j in test_indices:
+        for i, j in test_indices_arr:
             test.append((i, j, matrix[i, j]))
             train[i, j] = 0
         return [(train, test)]
@@ -263,7 +263,7 @@ class RecsysPipeline:
 
     def recommend(self, X: np.ndarray, n: int = 10) -> list[list[int]]:
         preds = self.predict(X)
-        return top_n(preds, X, n=n)
+        return top_n(preds, X, n=n).tolist()
 
 
 def grid_search(
@@ -286,9 +286,11 @@ def grid_search(
     scores = []
     for params in params_list:
         param_dict = dict(zip(param_names, params))
-        fold_scores = []
+        fold_scores: list[Any] = []
         for _ in range(cv):
-            splits = train_test_split_ratings(matrix, 1 / cv, random_state)
+            splits = train_test_split_ratings(
+                matrix, test_size=1 / cv, random_state=random_state
+            )
             train, test = splits[0] if splits else (matrix.copy(), [])
             rec = RecommenderSystem(algorithm=param_dict.get("algorithm", "svd"))
             fit_kwargs = {
@@ -301,20 +303,24 @@ def grid_search(
                     score = 0.0
                 else:
                     score = (
-                        np.mean(
-                            [
-                                METRIC_FUNCS[metric](
-                                    np.array([[preds[u, i]]]), np.array([[r]])
-                                )
-                                for u, i, r in test
-                            ]
+                        float(
+                            np.mean(
+                                [
+                                    float(
+                                        METRIC_FUNCS[metric](
+                                            np.array([[preds[u, i]]]), np.array([[r]])
+                                        )
+                                    )
+                                    for u, i, r in test
+                                ]
+                            )
                         )
                         if test
                         else 0.0
                     )
             except Exception:
                 score = 0.0
-            fold_scores.append(score)
+            fold_scores.append(np.float64(score))
         if fold_scores:
             scores.append(np.mean(fold_scores))
         else:
