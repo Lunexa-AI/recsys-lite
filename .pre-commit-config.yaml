@@ -27,26 +27,28 @@ repos:
     rev: v0.1.6
     hooks:
       - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
+        args: ["--fix", "--exit-non-zero-on-fix"]
 
   - repo: local
     hooks:
+      # Unit‑test hook
       - id: pytest-check
         name: pytest
         entry: pytest
-        language: system
-        pass_filenames: false
-        always_run: true
-        args: ["--tb=short", "-v"]
+        language: python
+        types: [python]
+        additional_dependencies:
+          - ".[dev,all]"
+        args: ["-q"]
         stages: [manual]
 
-  - repo: local
-    hooks:
+      # Benchmark hook
       - id: benchmark-check
-        name: benchmark
+        name: pytest benchmark
         entry: pytest
-        language: system
-        pass_filenames: false
-        always_run: true
-        args: ["--benchmark-only", "-v"]
+        language: python
+        types: [python]
+        additional_dependencies:
+          - ".[dev,all]"
+        args: ["--benchmark-only", "-q"]
         stages: [manual]
