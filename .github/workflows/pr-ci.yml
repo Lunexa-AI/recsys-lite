@@ -10,6 +10,8 @@ jobs:
     timeout-minutes: 10           # keep SLA small
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # --- Python toolchain & cache -----------------------------------------
       - uses: actions/setup-python@v5
@@ -39,11 +41,11 @@ jobs:
             poetry run mypy --ignore-missing-imports $FILES
           fi
 
-      - name: Unit tests (fast marker) + 75 % diff‑coverage gate
+      - name: Unit tests (fast marker) + 75% diff-coverage gate
         run: |
           poetry run pytest -m "not slow" -q \
             --cov src --cov-report=xml --cov-fail-under=1
-          # diff-coverage fail-under 75 %
+          # diff-coverage fail-under 75%
           pip install diff-cover
           diff-cover coverage.xml --fail-under=75
 
