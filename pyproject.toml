@@ -41,9 +41,10 @@ all     = ["numba", "pandas", "pyarrow", "h5py", "sqlalchemy"]
 
 # ---------- Dev & tooling groups ----------
 [tool.poetry.group.dev.dependencies]
-pytest      = "^8.4"
+pytest      = "^7.4"
 pytest-cov  = "^6.2"
 pytest-benchmark = "^4.0"
+pluggy      = "1.5.0"
 pre-commit  = "^3.6"
 ruff        = "^0.4"
 black       = "^25"

@@ -1,0 +1,37 @@
+name: Nightly Checks
+
+on:
+  schedule:
+    - cron: '0 3 * * *'   # every day at 03:00 UTC
+  workflow_dispatch:      # run on‑demand
+
+jobs:
+  full-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.10', '3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: 'pip'
+      - name: Install Poetry & deps (+extras)
+        run: |
+          pip install --upgrade poetry
+          poetry install --with dev --all-extras
+      - name: Full test suite + coverage 80 %
+        run: poetry run pytest -q --cov --cov-fail-under=80
+      - name: Bandit + pip‑audit
+        run: |
+          poetry run bandit -r src -ll
+          poetry run pip-audit
+      - name: Build multi‑arch Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          build-arg: RUN_TESTS=false
+          target: runtime
+          push: false
