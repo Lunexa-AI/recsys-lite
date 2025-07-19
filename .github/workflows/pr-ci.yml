@@ -1,4 +1,4 @@
-name: PR‑CI (Fast)
+name: PR-CI (Fast)
 
 on:
   pull_request:
@@ -20,7 +20,7 @@ jobs:
       - name: Install Poetry & deps (no extras)
         run: |
           pip install --upgrade poetry
-          poetry install --with dev --no-interaction --no-root
+          poetry install --with dev --no-interaction
 
       # --- Fast gates -------------------------------------------------------
       - name: Ruff + Black + Isort (changed files)
@@ -43,7 +43,7 @@ jobs:
         run: |
           poetry run pytest -m "not slow" -q \
             --cov src --cov-report=xml --cov-fail-under=1
-          # diff‑coverage fail‑under 75 %
+          # diff-coverage fail-under 75 %
           pip install diff-cover
           diff-cover coverage.xml --fail-under=75
 
