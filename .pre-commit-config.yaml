@@ -39,7 +39,7 @@ repos:
         types: [python]
         additional_dependencies:
           - ".[dev,all]"
-        args: ["-q"]
+        args: ["-q", "-p", "no:cov"]
         stages: [manual]
 
       # Benchmark hook
