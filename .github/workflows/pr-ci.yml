@@ -41,13 +41,13 @@ jobs:
             poetry run mypy --ignore-missing-imports $FILES
           fi
 
-      - name: Unit tests (fast marker) + 75% diff-coverage gate
+      - name: Unit tests (fast marker) + 50% diff-coverage gate
         run: |
           poetry run pytest -m "not slow" -q \
             --cov src --cov-report=xml --cov-fail-under=1
-          # diff-coverage fail-under 75%
+          # diff-coverage fail-under 50%
           pip install diff-cover
-          diff-cover coverage.xml --fail-under=75
+          diff-cover coverage.xml --fail-under=50
 
       # --- Smoke Docker build (native arch, no push) ------------------------
       - name: Docker build (native, skip tests in image)

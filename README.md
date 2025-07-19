@@ -1,5 +1,5 @@
 
-[![CI](https://github.com/Lunexa-AI/recsys-lite/actions/workflows/ci.yml/badge.svg)](https://github.com/Lunexa-AI/recsys-lite/actions)
+[![CI](https://github.com/Lunexa-AI/recsys-lite/actions/workflows/pr-ci.yml/badge.svg)](https://github.com/Lunexa-AI/recsys-lite/actions)
 [![Python](https://img.shields.io/badge/python->=3.9-blue.svg)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://img.shields.io/pypi/v/recsys-lite.svg)](https://pypi.org/project/recsys-lite/)
