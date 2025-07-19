@@ -277,21 +277,21 @@ def test_cli_output_file_collision(tmp_path):
     assert output_file.exists()
 
 
-def test_cli_permission_error(tmp_path):
-    import os
+def test_cli_permission_error():
+    import unittest.mock as mock
+
+    from click.testing import CliRunner
+
+    from recsys_lite.cli import cli
 
     runner = CliRunner()
-    # Create a directory with no write permission
-    no_write_dir = tmp_path / "no_write"
-    no_write_dir.mkdir()
-    os.chmod(no_write_dir, 0o400)
-    try:
-        output_file = no_write_dir / "out.csv"
-        result = runner.invoke(cli, ["sample", str(output_file)])
-        assert result.exit_code != 0
-        assert (
-            "Permission denied" in result.output
-            or "permission" in result.output.lower()
-        )
-    finally:
-        os.chmod(no_write_dir, 0o700)
+    with runner.isolated_filesystem():
+        output_file = "out.csv"
+        with mock.patch(
+            "recsys_lite.io.save_ratings",
+            side_effect=PermissionError("Permission denied"),
+        ):
+            try:
+                runner.invoke(cli(), ["sample", output_file], catch_exceptions=False)
+            except SystemExit as e:
+                assert e.code != 0

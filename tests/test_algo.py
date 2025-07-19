@@ -483,19 +483,24 @@ class TestRecommenderSystem:
         ratings = np.array([[5, 3, 0, 1], [0, 0, 4, 5]], dtype=np.float32)
         recommender.fit(ratings, k=2)
 
-        # Save model
-        recommender.save("test_model.pkl")
+        # Use temporary file to avoid modifying repository
+        with tempfile.NamedTemporaryFile(suffix=".pkl", delete=False) as f:
+            temp_path = f.name
 
-        # Load model
-        loaded_recommender = RecommenderSystem.load("test_model.pkl")
+        try:
+            # Save model
+            recommender.save(temp_path)
 
-        # Test that loaded model works
-        predictions = loaded_recommender.predict(ratings)
-        assert predictions.shape == ratings.shape
+            # Load model
+            loaded_recommender = RecommenderSystem.load(temp_path)
 
-        # Clean up
-        if os.path.exists("test_model.pkl"):
-            os.remove("test_model.pkl")
+            # Test that loaded model works
+            predictions = loaded_recommender.predict(ratings)
+            assert predictions.shape == ratings.shape
+        finally:
+            # Clean up
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
 
     def test_model_parameters(self) -> None:
         """Test model parameter access."""

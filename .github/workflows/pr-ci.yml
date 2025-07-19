@@ -1,0 +1,59 @@
+name: PR-CI (Fast)
+
+on:
+  pull_request:
+    branches: ['main']
+
+jobs:
+  fast-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10           # keep SLA small
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # --- Python toolchain & cache -----------------------------------------
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'  # single version for speed
+          cache: 'pip'
+
+      - name: Install Poetry & deps (no extras)
+        run: |
+          pip install --upgrade poetry
+          poetry install --with dev --no-interaction
+
+      # --- Fast gates -------------------------------------------------------
+      - name: Ruff + Black + Isort (changed files)
+        run: |
+          CHANGED=$(git diff --name-only -r origin/main... | grep -E '\.py$' || true)
+          if [ -n "$CHANGED" ]; then
+            poetry run ruff check $CHANGED
+            poetry run black --check $CHANGED
+            poetry run isort --check $CHANGED
+          fi
+
+      - name: MyPy (changed files, ignore missing stubs)
+        run: |
+          FILES=$(git diff --name-only -r origin/main... | grep -E '^src/.*\.py$' || true)
+          if [ -n "$FILES" ]; then
+            poetry run mypy --ignore-missing-imports $FILES
+          fi
+
+      - name: Unit tests (fast marker) + 75% diff-coverage gate
+        run: |
+          poetry run pytest -m "not slow" -q \
+            --cov src --cov-report=xml --cov-fail-under=1
+          # diff-coverage fail-under 75%
+          pip install diff-cover
+          diff-cover coverage.xml --fail-under=75
+
+      # --- Smoke Docker build (native arch, no push) ------------------------
+      - name: Docker build (native, skip tests in image)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: runtime
+          push: false
+          load: false

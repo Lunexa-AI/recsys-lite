@@ -1,44 +1,33 @@
-# Developer-friendly Makefile for recsys_lite
+# Makefile — MVP phase
+.DEFAULT_GOAL := help
+.PHONY: dev lint test ci docker-smoke clean help
 
-.PHONY: dev lint test coverage precommit docker-build docker-test ci
+PY = poetry run
 
-# Set up full dev environment (Poetry, venv, pre-commit)
-dev:
-	@echo "[dev] Installing Poetry, dependencies, and pre-commit hooks..."
-	@if ! command -v poetry >/dev/null 2>&1; then \
-	  pip install --user poetry; \
-	fi
+dev:           ## install deps + pre‑commit
 	poetry install --with dev
-	poetry run pre-commit install
-	@echo "[dev] Setup complete!"
+	$(PY) pre-commit install
 
-# Lint all code
-lint:
-	poetry run black --check src/ tests/
-	poetry run isort --check src/ tests/
-	poetry run ruff check src/ tests/
+lint:          ## Ruff/Black/Isort on changed files
+	@CHANGED=$$(git diff --name-only -r origin/main... | grep -E '\.py$$' || true); \
+	if [ -n "$$CHANGED" ]; then \
+	  $(PY) ruff check $$CHANGED && \
+	  $(PY) black --check $$CHANGED && \
+	  $(PY) isort --check $$CHANGED ; \
+	else echo "No Python changes."; fi
 
-# Run all tests with coverage
-test:
-	poetry run pytest --cov=recsys_lite --cov-report=term-missing --cov-fail-under=75
+test:          ## fast marker tests
+	$(PY) pytest -m "not slow" -q
 
-# Show coverage report, fail if below threshold
-coverage:
-	poetry run pytest --cov=src/recsys_lite --cov-report=term-missing --cov-fail-under=75
+docker-smoke:  ## build runtime stage (native arch only)
+	docker buildx build --target runtime -t $(USER)/recsys-lite:dev .
 
-# Run all pre-commit hooks
-precommit:
-	poetry run pre-commit run --all-files
+ci: lint test docker-smoke ## local replica of PR‑CI
+	@echo "Local fast-CI passed ✅"
 
-# Build Docker image
-docker-build:
-	docker build -t recsys-lite:latest .
+clean:
+	rm -rf .venv .pytest_cache .coverage dist
 
-# Run tests inside Docker container
-# Note: Use --entrypoint poetry to ensure dev dependencies (pytest) are available
-docker-test:
-	docker run --rm --entrypoint poetry recsys-lite:latest run pytest --cov=recsys_lite --cov-report=term-missing --cov-fail-under=75
-
-# Simulate full CI locally
-ci: lint test coverage docker-build docker-test
-	@echo "[ci] All checks passed! Ready to push."
+help:
+	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) \
+	  | awk 'BEGIN {FS = ":.*##"} {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'

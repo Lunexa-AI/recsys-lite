@@ -469,17 +469,14 @@ def test_run_algorithm_benchmark_unknown_algorithm():
 
 
 def test_benchmark_suite_save_results_file_error(tmp_path):
+    import unittest.mock as mock
+
+    import pytest
+
     from recsys_lite.benchmark import BenchmarkSuite
 
     suite = BenchmarkSuite(output_dir=tmp_path)
-    # Simulate a directory that cannot be written to
     results = {"matrix_info": {}, "configurations": [], "summary": {}}
-    # Remove write permissions
-    import os
-
-    os.chmod(tmp_path, 0o400)
-    try:
-        with pytest.raises(Exception):
-            suite._save_results(results)
-    finally:
-        os.chmod(tmp_path, 0o700)
+    # Patch open to raise IOError
+    with mock.patch("builtins.open", side_effect=IOError), pytest.raises(IOError):
+        suite._save_results(results)

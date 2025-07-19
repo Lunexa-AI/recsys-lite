@@ -557,7 +557,7 @@ def _top_n_numba(
         Array of shape (n_users, n) containing item indices.
     """
     n_users, n_items = est.shape
-    output = np.empty((n_users, n), dtype=np.int32)
+    output = np.full((n_users, n), -1, dtype=np.int32)
 
     for i in range(n_users):
         # Create a copy to avoid modifying original
@@ -568,12 +568,18 @@ def _top_n_numba(
             if known[i, j] > 0.0:
                 user_estimates[j] = -np.inf
 
+        unrated_count = 0
+        for j in range(n_items):
+            if known[i, j] <= 0.0:
+                unrated_count += 1
+        n_actual = min(n, unrated_count)
+        if n_actual == 0:
+            continue  # output[i] remains all -1
         # Use argpartition for O(n) partial sort
-        idx = np.argpartition(user_estimates, -n)[-n:]
-
-        # Sort the top-n items in descending order
+        idx = np.argpartition(user_estimates, -n_actual)[-n_actual:]
+        # Sort the top-n_actual items in descending order
         sorted_indices = np.argsort(user_estimates[idx])[::-1]
-        output[i] = idx[sorted_indices]
+        output[i, :n_actual] = idx[sorted_indices]
 
     return output
 
@@ -611,10 +617,26 @@ def top_n(est: FloatMatrix, known: FloatMatrix, *, n: int = 10) -> np.ndarray:
     if n_users == 0 or n_items == 0:
         return np.empty((0, 0), dtype=int)
 
+    # Check if all items are rated for all users
+    all_rated = np.all(known_dense > 0, axis=1)
+    if np.all(all_rated):
+        return np.empty((n_users, 0), dtype=int)
+
     # Use Numba-accelerated function if available
     if HAS_NUMBA:
         result: np.ndarray = _top_n_numba(est_dense, known_dense, n)
-        return result
+        # Post-process: set rows to empty if all items rated for that user
+        for i in range(n_users):
+            if all_rated[i]:
+                result[i, :] = -1  # or any invalid index, will be sliced out by shape
+        # Remove columns where all values are -1 (i.e., users with no recs)
+        if np.all(result == -1):
+            return np.empty((n_users, 0), dtype=int)
+        # Otherwise, filter out -1 columns for users with no recs
+        max_valid = np.max(np.sum(result != -1, axis=1))
+        if max_valid == 0:
+            return np.empty((n_users, 0), dtype=int)
+        return result[:, :max_valid]
     else:
         result_list: list[np.ndarray] = []
         for user_preds, user_known in zip(est_dense, known_dense):
